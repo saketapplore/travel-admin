@@ -193,6 +193,116 @@ const SuperAdminDashboard = () => {
     reportType: 'All'
   });
   const [reportingSubSection, setReportingSubSection] = useState('reports');
+
+  // Logs State
+  const [logs, setLogs] = useState([
+    {
+      id: 1,
+      managerName: 'John Property',
+      managerEmail: 'john.property@email.com',
+      managerType: 'Property Manager',
+      activity: 'Created Property',
+      details: 'Created new property: Sunset Villa',
+      timestamp: '2024-01-15 10:30:45',
+      ipAddress: '192.168.1.100'
+    },
+    {
+      id: 2,
+      managerName: 'Sarah Booking',
+      managerEmail: 'sarah.booking@email.com',
+      managerType: 'Booking Manager',
+      activity: 'Approved Booking',
+      details: 'Approved booking #BK001 for John Smith',
+      timestamp: '2024-01-15 11:15:20',
+      ipAddress: '192.168.1.101'
+    },
+    {
+      id: 3,
+      managerName: 'Mike Staff',
+      managerEmail: 'mike.staff@email.com',
+      managerType: 'Staff Manager',
+      activity: 'Added Staff Member',
+      details: 'Added new staff member: Jane Doe',
+      timestamp: '2024-01-15 12:00:10',
+      ipAddress: '192.168.1.102'
+    },
+    {
+      id: 4,
+      managerName: 'John Property',
+      managerEmail: 'john.property@email.com',
+      managerType: 'Property Manager',
+      activity: 'Updated Property',
+      details: 'Updated property: Ocean View Resort - Changed pricing',
+      timestamp: '2024-01-15 13:45:30',
+      ipAddress: '192.168.1.100'
+    },
+    {
+      id: 5,
+      managerName: 'Sarah Booking',
+      managerEmail: 'sarah.booking@email.com',
+      managerType: 'Booking Manager',
+      activity: 'Rejected Booking',
+      details: 'Rejected booking #BK002 for Emily Davis',
+      timestamp: '2024-01-15 14:20:15',
+      ipAddress: '192.168.1.101'
+    },
+    {
+      id: 6,
+      managerName: 'Mike Staff',
+      managerEmail: 'mike.staff@email.com',
+      managerType: 'Staff Manager',
+      activity: 'Updated Staff Member',
+      details: 'Updated staff member: John Doe - Changed status to Active',
+      timestamp: '2024-01-15 15:10:50',
+      ipAddress: '192.168.1.102'
+    },
+    {
+      id: 7,
+      managerName: 'John Property',
+      managerEmail: 'john.property@email.com',
+      managerType: 'Property Manager',
+      activity: 'Deleted Property',
+      details: 'Deleted property: Old Mountain Cabin',
+      timestamp: '2024-01-15 16:30:25',
+      ipAddress: '192.168.1.100'
+    },
+    {
+      id: 8,
+      managerName: 'Sarah Booking',
+      managerEmail: 'sarah.booking@email.com',
+      managerType: 'Booking Manager',
+      activity: 'Updated Booking',
+      details: 'Updated booking #BK003 - Changed check-in date',
+      timestamp: '2024-01-15 17:00:40',
+      ipAddress: '192.168.1.101'
+    },
+    {
+      id: 9,
+      managerName: 'Mike Staff',
+      managerEmail: 'mike.staff@email.com',
+      managerType: 'Staff Manager',
+      activity: 'Deleted Staff Member',
+      details: 'Deleted staff member: Bob Smith',
+      timestamp: '2024-01-15 18:15:55',
+      ipAddress: '192.168.1.102'
+    },
+    {
+      id: 10,
+      managerName: 'John Property',
+      managerEmail: 'john.property@email.com',
+      managerType: 'Property Manager',
+      activity: 'Uploaded Property Image',
+      details: 'Uploaded new image for property: Beach House',
+      timestamp: '2024-01-15 19:20:30',
+      ipAddress: '192.168.1.100'
+    }
+  ]);
+  const [logsFilters, setLogsFilters] = useState({
+    managerType: 'All',
+    activityType: 'All',
+    dateFrom: '',
+    dateTo: ''
+  });
   
   // Sample analytics data
   const analyticsData = {
@@ -264,14 +374,20 @@ const SuperAdminDashboard = () => {
       propertyId: 1,
       checkIn: '2024-02-15',
       checkOut: '2024-02-20',
-      guests: 2,
+      guests: 4,
       amount: 1500,
       paymentStatus: 'Paid',
       bookingStatus: 'Pending',
       idNumber: 'ID123456789',
       idPhoto: 'https://via.placeholder.com/300x200?text=ID+Photo+1',
       createdAt: '2024-01-10',
-      notes: 'Guest requested early check-in'
+      notes: 'Guest requested early check-in',
+      familyMembers: [
+        { name: 'John Smith', email: 'john.smith@email.com', phone: '+1 234-567-8900', relation: 'Adult' },
+        { name: 'Jane Smith', email: 'jane.smith@email.com', phone: '+1 234-567-8901', relation: 'Adult' },
+        { name: 'Tom Smith', email: 'tom.smith@email.com', phone: '+1 234-567-8902', relation: 'Children' },
+        { name: 'Emma Smith', email: 'emma.smith@email.com', phone: '+1 234-567-8903', relation: 'Children' }
+      ]
     },
     {
       id: 2,
@@ -289,7 +405,13 @@ const SuperAdminDashboard = () => {
       idNumber: 'ID987654321',
       idPhoto: 'https://via.placeholder.com/300x200?text=ID+Photo+2',
       createdAt: '2024-01-12',
-      notes: 'Family with children'
+      notes: 'Family with children',
+      familyMembers: [
+        { name: 'Sarah Johnson', email: 'sarah.j@email.com', phone: '+1 234-567-8901', relation: 'Adult' },
+        { name: 'Mark Johnson', email: 'mark.j@email.com', phone: '+1 234-567-8904', relation: 'Adult' },
+        { name: 'Lily Johnson', email: 'lily.j@email.com', phone: '+1 234-567-8905', relation: 'Children' },
+        { name: 'Noah Johnson', email: 'noah.j@email.com', phone: '+1 234-567-8906', relation: 'Children' }
+      ]
     },
     {
       id: 3,
@@ -307,7 +429,11 @@ const SuperAdminDashboard = () => {
       idNumber: 'ID456789123',
       idPhoto: 'https://via.placeholder.com/300x200?text=ID+Photo+3',
       createdAt: '2024-01-08',
-      notes: 'Honeymoon couple'
+      notes: 'Honeymoon couple',
+      familyMembers: [
+        { name: 'Michael Brown', email: 'm.brown@email.com', phone: '+1 234-567-8902', relation: 'Adult' },
+        { name: 'Sophia Brown', email: 'sophia.brown@email.com', phone: '+1 234-567-8907', relation: 'Adult' }
+      ]
     },
     {
       id: 4,
@@ -325,7 +451,10 @@ const SuperAdminDashboard = () => {
       idNumber: 'ID789123456',
       idPhoto: 'https://via.placeholder.com/300x200?text=ID+Photo+4',
       createdAt: '2024-01-15',
-      notes: 'Booking cancelled by guest'
+      notes: 'Booking cancelled by guest',
+      familyMembers: [
+        { name: 'Emily Davis', email: 'emily.d@email.com', phone: '+1 234-567-8903', relation: 'Adult' }
+      ]
     },
     {
       id: 5,
@@ -343,11 +472,21 @@ const SuperAdminDashboard = () => {
       idNumber: 'ID321654987',
       idPhoto: 'https://via.placeholder.com/300x200?text=ID+Photo+5',
       createdAt: '2024-01-05',
-      notes: 'Large group booking'
+      notes: 'Large group booking',
+      familyMembers: [
+        { name: 'David Wilson', email: 'd.wilson@email.com', phone: '+1 234-567-8904', relation: 'Adult' },
+        { name: 'Olivia Wilson', email: 'olivia.w@email.com', phone: '+1 234-567-8908', relation: 'Adult' },
+        { name: 'James Wilson', email: 'james.w@email.com', phone: '+1 234-567-8909', relation: 'Children' },
+        { name: 'Charlotte Wilson', email: 'charlotte.w@email.com', phone: '+1 234-567-8910', relation: 'Children' },
+        { name: 'Robert Wilson', email: 'robert.w@email.com', phone: '+1 234-567-8911', relation: 'Adult' },
+        { name: 'Mary Wilson', email: 'mary.w@email.com', phone: '+1 234-567-8912', relation: 'Adult' }
+      ]
     }
   ]);
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [editingBooking, setEditingBooking] = useState(null);
+  const [showGuestDetailsModal, setShowGuestDetailsModal] = useState(false);
+  const [selectedGuest, setSelectedGuest] = useState(null);
   const [bookingFormData, setBookingFormData] = useState({
     guestName: '',
     guestEmail: '',
@@ -1091,6 +1230,11 @@ const SuperAdminDashboard = () => {
     setShowBookingModal(true);
   };
 
+  const handleViewGuestDetails = (booking) => {
+    setSelectedGuest(booking);
+    setShowGuestDetailsModal(true);
+  };
+
   const handleBookingSubmit = (e) => {
     e.preventDefault();
     const oldBooking = bookings.find(b => b.id === editingBooking.id);
@@ -1151,6 +1295,152 @@ const SuperAdminDashboard = () => {
       default:
         return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  // Booking Invoice Generation
+  const handleGenerateBookingInvoice = (booking) => {
+    // Calculate GST (18%)
+    const gstRate = 18;
+    const subtotal = booking.amount;
+    const gstAmount = (subtotal * gstRate) / 100;
+    const totalAmount = subtotal + gstAmount;
+    
+    // Generate invoice number
+    const invoiceNumber = `INV-BK-${String(booking.id).padStart(4, '0')}`;
+    
+    // Generate invoice data
+    const invoiceData = {
+      invoiceNumber: invoiceNumber,
+      date: new Date().toLocaleDateString('en-IN'),
+      guestName: booking.guestName,
+      guestEmail: booking.guestEmail,
+      guestPhone: booking.guestPhone,
+      propertyName: booking.propertyName,
+      checkIn: booking.checkIn,
+      checkOut: booking.checkOut,
+      guests: booking.guests,
+      subtotal: subtotal,
+      gstRate: gstRate,
+      gstAmount: gstAmount,
+      totalAmount: totalAmount,
+      paymentStatus: booking.paymentStatus,
+      bookingStatus: booking.bookingStatus,
+      bookingDate: booking.createdAt
+    };
+
+    // Create invoice HTML
+    const invoiceHTML = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Invoice ${invoiceData.invoiceNumber}</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 40px; }
+          .invoice-header { border-bottom: 2px solid #f97316; padding-bottom: 20px; margin-bottom: 30px; }
+          .invoice-title { font-size: 28px; color: #f97316; font-weight: bold; }
+          .invoice-details { display: flex; justify-content: space-between; margin-top: 20px; }
+          .company-info { flex: 1; }
+          .invoice-info { flex: 1; text-align: right; }
+          table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+          th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+          th { background-color: #f97316; color: white; }
+          .total-section { margin-top: 20px; text-align: right; }
+          .total-row { font-size: 18px; font-weight: bold; padding: 10px 0; }
+          .gst-info { margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 12px; color: #666; }
+          .booking-details { background-color: #f9fafb; padding: 15px; border-radius: 5px; margin: 20px 0; }
+        </style>
+      </head>
+      <body>
+        <div class="invoice-header">
+          <div class="invoice-title">TAX INVOICE</div>
+          <div class="invoice-details">
+            <div class="company-info">
+              <h3>Travel Rumors</h3>
+              <p>123 Travel Street, Tourism City</p>
+              <p>GSTIN: 27AAAAA0000A1Z5</p>
+              <p>Email: info@travelrumors.com</p>
+            </div>
+            <div class="invoice-info">
+              <p><strong>Invoice No:</strong> ${invoiceData.invoiceNumber}</p>
+              <p><strong>Date:</strong> ${invoiceData.date}</p>
+              <p><strong>Booking Date:</strong> ${invoiceData.bookingDate}</p>
+            </div>
+          </div>
+        </div>
+        
+        <div>
+          <h3>Bill To:</h3>
+          <p><strong>${invoiceData.guestName}</strong></p>
+          <p>${invoiceData.guestEmail}</p>
+          <p>${invoiceData.guestPhone}</p>
+        </div>
+        
+        <div class="booking-details">
+          <h4>Booking Details:</h4>
+          <p><strong>Property:</strong> ${invoiceData.propertyName}</p>
+          <p><strong>Check In:</strong> ${invoiceData.checkIn}</p>
+          <p><strong>Check Out:</strong> ${invoiceData.checkOut}</p>
+          <p><strong>Number of Guests:</strong> ${invoiceData.guests}</p>
+          <p><strong>Booking Status:</strong> ${invoiceData.bookingStatus}</p>
+        </div>
+        
+        <table>
+          <thead>
+            <tr>
+              <th>Description</th>
+              <th>Check In</th>
+              <th>Check Out</th>
+              <th>Subtotal</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>${invoiceData.propertyName} - ${invoiceData.checkIn} to ${invoiceData.checkOut}</td>
+              <td>${invoiceData.checkIn}</td>
+              <td>${invoiceData.checkOut}</td>
+              <td>₹${invoiceData.subtotal.toLocaleString('en-IN')}</td>
+            </tr>
+          </tbody>
+        </table>
+        
+        <div class="total-section">
+          <div style="display: flex; justify-content: flex-end;">
+            <div style="width: 300px;">
+              <div style="display: flex; justify-content: space-between; padding: 5px 0;">
+                <span>Subtotal:</span>
+                <span>₹${invoiceData.subtotal.toLocaleString('en-IN')}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; padding: 5px 0;">
+                <span>GST (18%):</span>
+                <span>₹${invoiceData.gstAmount.toLocaleString('en-IN')}</span>
+              </div>
+              <div class="total-row" style="display: flex; justify-content: space-between; padding: 10px 0; border-top: 2px solid #f97316;">
+                <span>Total Amount:</span>
+                <span>₹${invoiceData.totalAmount.toLocaleString('en-IN')}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="gst-info">
+          <p><strong>Payment Status:</strong> ${invoiceData.paymentStatus}</p>
+          <p>This is a computer-generated invoice and does not require a signature.</p>
+          <p>GST Registration Number: 27AAAAA0000A1Z5</p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    // Create blob and download
+    const blob = new Blob([invoiceHTML], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Invoice_${invoiceData.invoiceNumber}.html`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   // Financial Management Handlers
@@ -1366,6 +1656,16 @@ const SuperAdminDashboard = () => {
             >
               📊 Reporting & Analytics
             </button>
+            <button
+              onClick={() => setActiveSection('logs')}
+              className={`w-full text-left px-4 py-3 rounded-lg transition duration-200 ${
+                activeSection === 'logs'
+                  ? 'bg-orange-500 text-white font-semibold'
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              📝 Activity Logs
+            </button>
           </nav>
         </div>
       </aside>
@@ -1386,6 +1686,10 @@ const SuperAdminDashboard = () => {
              ? 'Create promotional offers, discount codes, and custom packages for users'
              : activeSection === 'financial'
              ? 'View and track all transactions, generate GST-compliant invoices for bookings'
+             : activeSection === 'reporting'
+             ? 'Generate reports on bookings, revenue, occupancy, and view staff performance metrics'
+             : activeSection === 'logs'
+             ? 'View activity logs from Property Managers, Staff Managers, and Booking Managers'
              : 'Generate reports on bookings, revenue, occupancy, and view staff performance metrics'}
          </p>
         </div>
@@ -1735,16 +2039,8 @@ const SuperAdminDashboard = () => {
         {/* Bookings List */}
         {bookingsSubSection === 'bookings' && (
         <>
-        <div className="flex justify-between items-center mb-6">
+        <div className="mb-6">
           <h4 className="text-lg font-semibold text-gray-800">All Bookings</h4>
-          <div className="flex space-x-2">
-            <button className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg font-semibold transition duration-200">
-              Filter
-            </button>
-            <button className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg font-semibold transition duration-200 shadow-md">
-              Export
-            </button>
-          </div>
         </div>
 
         <div className="overflow-x-auto">
@@ -1764,7 +2060,14 @@ const SuperAdminDashboard = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {bookings.map((booking) => (
                 <tr key={booking.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{booking.guestName}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <button
+                      onClick={() => handleViewGuestDetails(booking)}
+                      className="text-blue-600 hover:text-blue-900 hover:underline cursor-pointer"
+                    >
+                      {booking.guestName}
+                    </button>
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{booking.propertyName}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{booking.checkIn}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{booking.checkOut}</td>
@@ -1786,17 +2089,24 @@ const SuperAdminDashboard = () => {
                     >
                       View/Edit
                     </button>
+                    <button
+                      onClick={() => handleGenerateBookingInvoice(booking)}
+                      className="text-orange-600 hover:text-orange-900 ml-2"
+                      title="Generate & Download Invoice"
+                    >
+                      📄 Invoice
+                    </button>
                     {booking.bookingStatus === 'Pending' && (
                       <>
                         <button
                           onClick={() => handleApproveBooking(booking.id)}
-                          className="text-green-600 hover:text-green-900"
+                          className="text-green-600 hover:text-green-900 ml-2"
                         >
                           Approve
                         </button>
                         <button
                           onClick={() => handleRejectBooking(booking.id)}
-                          className="text-red-600 hover:text-red-900"
+                          className="text-red-600 hover:text-red-900 ml-2"
                         >
                           Reject
                         </button>
@@ -2680,6 +2990,220 @@ Generated on: ${new Date().toLocaleString('en-IN')}
       </div>
       )}
 
+      {/* Activity Logs Section */}
+      {activeSection === 'logs' && (
+      <div className="bg-white rounded-lg shadow-md p-6 w-full max-w-full overflow-hidden">
+        <div className="mb-6">
+          <h3 className="text-xl font-semibold text-gray-800 mb-2">Activity Logs</h3>
+          <p className="text-sm text-gray-600">Monitor all activities performed by Property Managers, Staff Managers, and Booking Managers</p>
+        </div>
+
+        {/* Filters */}
+        <div className="bg-gray-50 rounded-lg p-4 mb-6 border border-gray-200">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Manager Type</label>
+              <select
+                value={logsFilters.managerType}
+                onChange={(e) => setLogsFilters({ ...logsFilters, managerType: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              >
+                <option value="All">All Managers</option>
+                <option value="Property Manager">Property Manager</option>
+                <option value="Booking Manager">Booking Manager</option>
+                <option value="Staff Manager">Staff Manager</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Activity Type</label>
+              <select
+                value={logsFilters.activityType}
+                onChange={(e) => setLogsFilters({ ...logsFilters, activityType: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              >
+                <option value="All">All Activities</option>
+                <option value="Created">Created</option>
+                <option value="Updated">Updated</option>
+                <option value="Deleted">Deleted</option>
+                <option value="Approved">Approved</option>
+                <option value="Rejected">Rejected</option>
+                <option value="Uploaded">Uploaded</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Date From</label>
+              <input
+                type="date"
+                value={logsFilters.dateFrom}
+                onChange={(e) => setLogsFilters({ ...logsFilters, dateFrom: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Date To</label>
+              <input
+                type="date"
+                value={logsFilters.dateTo}
+                onChange={(e) => setLogsFilters({ ...logsFilters, dateTo: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Logs Table */}
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-gray-50 border-b">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timestamp</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Manager</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Manager Type</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Activity</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">IP Address</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {(() => {
+                let filteredLogs = logs;
+                
+                // Filter by manager type
+                if (logsFilters.managerType !== 'All') {
+                  filteredLogs = filteredLogs.filter(log => log.managerType === logsFilters.managerType);
+                }
+                
+                // Filter by activity type
+                if (logsFilters.activityType !== 'All') {
+                  filteredLogs = filteredLogs.filter(log => log.activity.startsWith(logsFilters.activityType));
+                }
+                
+                // Filter by date range
+                if (logsFilters.dateFrom) {
+                  filteredLogs = filteredLogs.filter(log => {
+                    const logDate = log.timestamp.split(' ')[0];
+                    return logDate >= logsFilters.dateFrom;
+                  });
+                }
+                
+                if (logsFilters.dateTo) {
+                  filteredLogs = filteredLogs.filter(log => {
+                    const logDate = log.timestamp.split(' ')[0];
+                    return logDate <= logsFilters.dateTo;
+                  });
+                }
+                
+                return filteredLogs.length === 0 ? (
+                  <tr>
+                    <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
+                      No activity logs found
+                    </td>
+                  </tr>
+                ) : (
+                  filteredLogs.map((log) => (
+                    <tr key={log.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {log.timestamp}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">{log.managerName}</div>
+                          <div className="text-sm text-gray-500">{log.managerEmail}</div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          log.managerType === 'Property Manager' ? 'bg-blue-100 text-blue-800' :
+                          log.managerType === 'Booking Manager' ? 'bg-green-100 text-green-800' :
+                          'bg-purple-100 text-purple-800'
+                        }`}>
+                          {log.managerType}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          log.activity.includes('Created') || log.activity.includes('Added') || log.activity.includes('Uploaded') ? 'bg-green-100 text-green-800' :
+                          log.activity.includes('Updated') ? 'bg-yellow-100 text-yellow-800' :
+                          log.activity.includes('Deleted') || log.activity.includes('Rejected') ? 'bg-red-100 text-red-800' :
+                          log.activity.includes('Approved') ? 'bg-blue-100 text-blue-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {log.activity}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-500">
+                        {log.details}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">
+                        {log.ipAddress}
+                      </td>
+                    </tr>
+                  ))
+                );
+              })()}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Export Button */}
+        <div className="mt-6 flex justify-end">
+          <button
+            onClick={() => {
+              let filteredLogs = logs;
+              
+              if (logsFilters.managerType !== 'All') {
+                filteredLogs = filteredLogs.filter(log => log.managerType === logsFilters.managerType);
+              }
+              
+              if (logsFilters.activityType !== 'All') {
+                filteredLogs = filteredLogs.filter(log => log.activity.startsWith(logsFilters.activityType));
+              }
+              
+              if (logsFilters.dateFrom) {
+                filteredLogs = filteredLogs.filter(log => {
+                  const logDate = log.timestamp.split(' ')[0];
+                  return logDate >= logsFilters.dateFrom;
+                });
+              }
+              
+              if (logsFilters.dateTo) {
+                filteredLogs = filteredLogs.filter(log => {
+                  const logDate = log.timestamp.split(' ')[0];
+                  return logDate <= logsFilters.dateTo;
+                });
+              }
+              
+              const csvContent = [
+                ['Timestamp', 'Manager Name', 'Manager Email', 'Manager Type', 'Activity', 'Details', 'IP Address'],
+                ...filteredLogs.map(log => [
+                  log.timestamp,
+                  log.managerName,
+                  log.managerEmail,
+                  log.managerType,
+                  log.activity,
+                  log.details,
+                  log.ipAddress
+                ])
+              ].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+              
+              const blob = new Blob([csvContent], { type: 'text/csv' });
+              const url = URL.createObjectURL(blob);
+              const link = document.createElement('a');
+              link.href = url;
+              link.download = `Activity_Logs_${new Date().toISOString().split('T')[0]}.csv`;
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+              URL.revokeObjectURL(url);
+            }}
+            className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg font-semibold transition duration-200"
+          >
+            📄 Export Logs
+          </button>
+        </div>
+      </div>
+      )}
+
       {/* Admin Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -3367,6 +3891,123 @@ Generated on: ${new Date().toLocaleString('en-IN')}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Guest Details Modal */}
+      {showGuestDetailsModal && selectedGuest && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto py-4">
+          <div className="bg-white rounded-lg p-8 max-w-4xl w-full mx-4 my-8 max-h-[90vh] flex flex-col">
+            <div className="flex justify-between items-center mb-6 flex-shrink-0">
+              <h3 className="text-2xl font-bold text-gray-800">Guest Details - {selectedGuest.guestName}</h3>
+              <button
+                onClick={() => {
+                  setShowGuestDetailsModal(false);
+                  setSelectedGuest(null);
+                }}
+                className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto pr-2">
+              {/* Primary Guest Information */}
+              <div className="mb-6">
+                <h4 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">Primary Guest Information</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                    <p className="text-sm text-gray-900 bg-gray-50 px-4 py-2 rounded-lg">{selectedGuest.guestName}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <p className="text-sm text-gray-900 bg-gray-50 px-4 py-2 rounded-lg">{selectedGuest.guestEmail}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                    <p className="text-sm text-gray-900 bg-gray-50 px-4 py-2 rounded-lg">{selectedGuest.guestPhone}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">ID Number</label>
+                    <p className="text-sm text-gray-900 bg-gray-50 px-4 py-2 rounded-lg">{selectedGuest.idNumber}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Booking Information */}
+              <div className="mb-6">
+                <h4 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">Booking Information</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Property</label>
+                    <p className="text-sm text-gray-900 bg-gray-50 px-4 py-2 rounded-lg">{selectedGuest.propertyName}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Total Guests</label>
+                    <p className="text-sm text-gray-900 bg-gray-50 px-4 py-2 rounded-lg">{selectedGuest.guests}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Check In</label>
+                    <p className="text-sm text-gray-900 bg-gray-50 px-4 py-2 rounded-lg">{selectedGuest.checkIn}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Check Out</label>
+                    <p className="text-sm text-gray-900 bg-gray-50 px-4 py-2 rounded-lg">{selectedGuest.checkOut}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Family Members */}
+              <div className="mb-6">
+                <h4 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">
+                  Family Members ({selectedGuest.familyMembers?.length || 0})
+                </h4>
+                {selectedGuest.familyMembers && selectedGuest.familyMembers.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="bg-gray-50 border-b">
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone Number</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Relation</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {selectedGuest.familyMembers.map((member, index) => (
+                          <tr key={index} className="hover:bg-gray-50">
+                            <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{member.name}</td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{member.email}</td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{member.phone}</td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                              <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                {member.relation}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500 text-center py-4">No family members registered for this booking.</p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex justify-end mt-6 flex-shrink-0 pt-4 border-t">
+              <button
+                onClick={() => {
+                  setShowGuestDetailsModal(false);
+                  setSelectedGuest(null);
+                }}
+                className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg font-semibold transition duration-200"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}
