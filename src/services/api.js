@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Create axios instance with base URL
 const api = axios.create({
-  baseURL: 'https://0j600dqx-8080.inc1.devtunnels.ms/api/admin',
+  baseURL: 'https://travel-rumours-api.applore.in/api/admin',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',

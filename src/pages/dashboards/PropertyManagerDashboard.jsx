@@ -28,28 +28,36 @@ const PropertyManagerDashboard = () => {
   // Helper function to parse media and extract image URLs
   const getImageUrls = (property) => {
     const images = [];
+    const seenUrls = new Set(); // To avoid duplicates
     
     // Check if uploadedFiles array exists
     if (property.uploadedFiles && Array.isArray(property.uploadedFiles)) {
       property.uploadedFiles.forEach(file => {
         if (file.url && (file.type?.startsWith('image/') || file.url.startsWith('data:image'))) {
-          images.push(file.url);
+          // Only add valid image URLs and avoid duplicates
+          if (file.url && !seenUrls.has(file.url)) {
+            images.push(file.url);
+            seenUrls.add(file.url);
+          }
         }
       });
     }
     
     // Also check media field for comma-separated URLs or base64 strings
-    if (property.media) {
+    // Only if uploadedFiles doesn't already have the images (to avoid duplicates)
+    if (property.media && (!property.uploadedFiles || property.uploadedFiles.length === 0)) {
       const mediaItems = property.media.split(',').map(item => item.trim()).filter(Boolean);
       mediaItems.forEach(item => {
-        // Check if it's a base64 image or a URL
-        if (item.startsWith('data:image') || item.startsWith('http://') || item.startsWith('https://')) {
+        // Check if it's a base64 image or a URL, and not already seen
+        if ((item.startsWith('data:image') || item.startsWith('http://') || item.startsWith('https://')) && !seenUrls.has(item)) {
           images.push(item);
+          seenUrls.add(item);
         }
       });
     }
     
-    return images;
+    // Filter out any invalid or empty URLs
+    return images.filter(url => url && url.trim().length > 0);
   };
 
   return (
@@ -211,13 +219,10 @@ const PropertyManagerDashboard = () => {
                               alt={`Property image ${index + 1}`}
                               className="w-full h-48 object-cover rounded-lg border border-gray-200 hover:shadow-lg transition-shadow cursor-pointer"
                               onError={(e) => {
+                                // Hide the image if it fails to load
                                 e.target.style.display = 'none';
-                                e.target.nextSibling.style.display = 'flex';
                               }}
                             />
-                            <div className="hidden w-full h-48 bg-gray-100 rounded-lg border border-gray-200 items-center justify-center">
-                              <p className="text-gray-400 text-sm">Failed to load image</p>
-                            </div>
                           </div>
                         ))}
                       </div>
