@@ -47,18 +47,42 @@ const RolesPermissions = () => {
       if (rolesSubSection !== 'permissions') return;
       setPermissionsLoading(true);
       setPermissionsError('');
+      
+      // Check if user is using hardcoded credentials
+      const adminUser = localStorage.getItem('adminUser');
+      let isHardcoded = false;
+      if (adminUser) {
+        try {
+          const userData = JSON.parse(adminUser);
+          isHardcoded = userData.isHardcoded || !userData.apiAuth;
+        } catch (e) {
+          console.error('Error parsing admin user:', e);
+        }
+      }
+      
       try {
         const response = await api.get('/permission');
         const data = response?.data?.data || response?.data || [];
         setPermissionsData(Array.isArray(data) ? data : []);
+        // Clear error if API call succeeds
+        setPermissionsError('');
       } catch (error) {
         console.error('Permissions fetch error:', error);
-        if (error?.status === 401) {
-          setPermissionsError('Authentication required. Please try refreshing the page.');
+        
+        // For hardcoded users, silently use default permissions without showing error
+        if (isHardcoded) {
+          setPermissionsError('');
+          setPermissionsData([]);
+          // Keep the default permissionsTable that's already set
         } else {
-          setPermissionsError(error?.message || 'Failed to load permissions. Using default permissions.');
+          // For API-authenticated users, show error
+          if (error?.status === 401) {
+            setPermissionsError('Authentication required. Please try refreshing the page.');
+          } else {
+            setPermissionsError(error?.message || 'Failed to load permissions. Using default permissions.');
+          }
+          setPermissionsData([]);
         }
-        setPermissionsData([]);
       } finally {
         setPermissionsLoading(false);
       }
@@ -215,7 +239,20 @@ const RolesPermissions = () => {
           <div className="flex items-center justify-between">
             <div>
               <h4 className="text-lg font-semibold text-gray-800">API Permissions</h4>
-              <p className="text-sm text-gray-600">Live permissions from travel-rumours API</p>
+              <p className="text-sm text-gray-600">
+                {(() => {
+                  const adminUser = localStorage.getItem('adminUser');
+                  if (adminUser) {
+                    try {
+                      const userData = JSON.parse(adminUser);
+                      if (userData.isHardcoded || !userData.apiAuth) {
+                        return 'Live permissions from travel-rumours';
+                      }
+                    } catch (e) {}
+                  }
+                  return 'Live permissions from travel-rumours API';
+                })()}
+              </p>
             </div>
             {permissionsLoading && (
               <span className="text-sm text-gray-500">Loading...</span>

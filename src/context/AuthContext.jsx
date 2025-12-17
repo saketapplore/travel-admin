@@ -3,6 +3,15 @@ import { authAPI } from '../services/api';
 
 const AuthContext = createContext(null);
 
+// Hardcoded Admin credentials for admin panel
+const HARDCODED_ADMIN_CREDENTIALS = {
+  email: 'ayush.rajput@applore.in',
+  password: 'Applore@123',
+  role: 'Super Admin',
+  roleKey: 'super-admin',
+  description: 'Can create, edit, and delete admin accounts and assign roles/permissions'
+};
+
 // Default Super Admin credential (cannot be deleted)
 const SUPER_ADMIN_CREDENTIAL = {
   email: 'superadmin@travelrumors.com',
@@ -50,8 +59,32 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (email, password) => {
+    const normalizedEmail = email.toLowerCase().trim();
+    
     try {
-      // Call the API for authentication using axios instance
+      // First, check hardcoded admin credentials
+      if (
+        normalizedEmail === HARDCODED_ADMIN_CREDENTIALS.email.toLowerCase() &&
+        password === HARDCODED_ADMIN_CREDENTIALS.password
+      ) {
+        // Generate a mock token for hardcoded admin to allow API calls
+        const mockToken = `hardcoded_admin_${btoa(HARDCODED_ADMIN_CREDENTIALS.email)}_${Date.now()}`;
+        const userData = {
+          email: HARDCODED_ADMIN_CREDENTIALS.email,
+          role: HARDCODED_ADMIN_CREDENTIALS.role,
+          roleKey: HARDCODED_ADMIN_CREDENTIALS.roleKey,
+          description: HARDCODED_ADMIN_CREDENTIALS.description,
+          name: email.split('@')[0],
+          token: mockToken,
+          apiAuth: false,
+          isHardcoded: true
+        };
+        setUser(userData);
+        localStorage.setItem('adminUser', JSON.stringify(userData));
+        return { success: true };
+      }
+
+      // Try API authentication
       const response = await authAPI.login({
         email: email.trim(),
         password: password
@@ -83,8 +116,7 @@ export const AuthProvider = ({ children }) => {
         return { success: true };
       }
 
-      // If API fails, check local created accounts
-      const normalizedEmail = email.toLowerCase().trim();
+      // If API response is not successful, check local created accounts
       const account = userAccounts.find(acc => acc.email.toLowerCase() === normalizedEmail);
       
       if (account && account.password === password) {
@@ -105,8 +137,29 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('Login error:', error);
       
+      // Check hardcoded admin credentials as fallback
+      if (
+        normalizedEmail === HARDCODED_ADMIN_CREDENTIALS.email.toLowerCase() &&
+        password === HARDCODED_ADMIN_CREDENTIALS.password
+      ) {
+        // Generate a mock token for hardcoded admin to allow API calls
+        const mockToken = `hardcoded_admin_${btoa(HARDCODED_ADMIN_CREDENTIALS.email)}_${Date.now()}`;
+        const userData = {
+          email: HARDCODED_ADMIN_CREDENTIALS.email,
+          role: HARDCODED_ADMIN_CREDENTIALS.role,
+          roleKey: HARDCODED_ADMIN_CREDENTIALS.roleKey,
+          description: HARDCODED_ADMIN_CREDENTIALS.description,
+          name: email.split('@')[0],
+          token: mockToken,
+          apiAuth: false,
+          isHardcoded: true
+        };
+        setUser(userData);
+        localStorage.setItem('adminUser', JSON.stringify(userData));
+        return { success: true };
+      }
+      
       // Fallback to local accounts if API fails
-      const normalizedEmail = email.toLowerCase().trim();
       const account = userAccounts.find(acc => acc.email.toLowerCase() === normalizedEmail);
       
       if (account && account.password === password) {
@@ -125,7 +178,7 @@ export const AuthProvider = ({ children }) => {
       
       return { 
         success: false, 
-        message: error.message || 'Unable to connect to server. Please try again.' 
+        message: error.message || 'Invalid email or password. Please try again.' 
       };
     }
   };
