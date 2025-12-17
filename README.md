@@ -32,25 +32,27 @@ The application will be available at `http://localhost:5173`
 
 ## Login Credentials
 
-### Super Admin
-- Email: `superadmin@travelrumors.com`
-- Password: `superadmin123`
-- Can create, edit, and delete admin accounts and assign roles/permissions
+### Super Admin (API Authentication)
+- **API Endpoint**: `https://travel-rumours-api.applore.in/`
+- **Method**: POST
+- **Email**: `ayush.rajput@applore.in`
+- **Password**: `Applore@123`
 
-### Property Manager
-- Email: `propertymanager@travelrumors.com`
-- Password: `property123`
-- Can manage property details, availability, and bookings assigned to them
+The login system authenticates via API. If API authentication succeeds, user is logged in as Super Admin with full permissions.
 
-### Booking Manager
-- Email: `bookingmanager@travelrumors.com`
-- Password: `booking123`
-- Can view and manage booking requests, confirmations, cancellations, and payments
+### Creating Other Accounts
 
-### Staff Manager
-- Email: `staffmanager@travelrumors.com`
-- Password: `staff123`
-- Can onboard staff members, assign bookings, and manage staff roles
+The Super Admin can create accounts for:
+- **Property Manager** - Can manage property details, availability, and bookings assigned to them
+- **Booking Manager** - Can view and manage booking requests, confirmations, cancellations, and payments
+- **Staff Manager** - Can onboard staff members, assign bookings, and manage staff roles
+
+To create accounts:
+1. Login as Super Admin using API credentials
+2. Go to "Admin Accounts" section
+3. Click "+ Create New Account"
+4. Enter name, email, password, and select role
+5. The account will be created and can be used to login (stored locally)
 
 ## Technologies Used
 

@@ -3,10 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const Login = () => {
-  const [selectedRole, setSelectedRole] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { login, user } = useAuth();
 
@@ -17,53 +17,35 @@ const Login = () => {
     }
   }, [user, navigate]);
 
-  // Role options with their corresponding emails
-  const roles = [
-    { value: '', label: 'Select a role', email: '' },
-    { value: 'super-admin', label: 'Super Admin', email: 'superadmin@travelrumors.com' },
-    { value: 'property-manager', label: 'Property Manager', email: 'propertymanager@travelrumors.com' },
-    { value: 'booking-manager', label: 'Booking Manager', email: 'bookingmanager@travelrumors.com' },
-    { value: 'staff-manager', label: 'Staff Manager', email: 'staffmanager@travelrumors.com' },
-  ];
-
-  const handleRoleChange = (e) => {
-    const roleValue = e.target.value;
-    setSelectedRole(roleValue);
-    
-    // Auto-fill email based on selected role
-    const selectedRoleData = roles.find(role => role.value === roleValue);
-    if (selectedRoleData) {
-      setEmail(selectedRoleData.email);
-    } else {
-      setEmail('');
-    }
-  };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-
-    if (!selectedRole) {
-      setError('Please select a role');
-      return;
-    }
+    setLoading(true);
 
     if (!email) {
       setError('Please enter your email');
+      setLoading(false);
       return;
     }
 
     if (!password) {
       setError('Please enter your password');
+      setLoading(false);
       return;
     }
 
-    const result = login(email, password);
-    
-    if (result.success) {
-      navigate('/dashboard');
-    } else {
-      setError(result.message);
+    try {
+      const result = await login(email, password);
+      
+      if (result.success) {
+        navigate('/dashboard');
+      } else {
+        setError(result.message);
+      }
+    } catch (err) {
+      setError('Login failed. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -77,36 +59,18 @@ const Login = () => {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-2">
-              Select Role
-            </label>
-            <select
-              id="role"
-              value={selectedRole}
-              onChange={handleRoleChange}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition bg-white"
-            >
-              {roles.map((role) => (
-                <option key={role.value} value={role.value}>
-                  {role.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-              Email
+              Email Address
             </label>
             <input
               type="email"
               id="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition bg-gray-50"
-              placeholder="Email will be auto-filled"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition"
+              placeholder="Enter your email"
               autoComplete="email"
-              readOnly
+              required
             />
           </div>
 
@@ -122,6 +86,7 @@ const Login = () => {
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition"
               placeholder="Enter your password"
               autoComplete="current-password"
+              required
             />
           </div>
 
@@ -133,11 +98,20 @@ const Login = () => {
 
           <button
             type="submit"
-            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-lg transition duration-200 shadow-lg hover:shadow-xl"
+            disabled={loading}
+            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-lg transition duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Login
+            {loading ? 'Logging in...' : 'Login'}
           </button>
         </form>
+
+        <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+          <p className="text-xs text-gray-600 font-semibold mb-2">Demo Credentials:</p>
+          <div className="text-xs text-gray-500">
+            <p>Email: <span className="font-mono">ayush.rajput@applore.in</span></p>
+            <p>Password: <span className="font-mono">Applore@123</span></p>
+          </div>
+        </div>
       </div>
     </div>
   );
