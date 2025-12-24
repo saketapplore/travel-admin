@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { EditIcon, DeleteIcon } from '../../../components/icons';
 
 const DiscountsPackages = () => {
   const [discountsSubSection, setDiscountsSubSection] = useState('discounts');
@@ -346,19 +347,23 @@ const DiscountsPackages = () => {
                       {pkg.status}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                    <button
-                      onClick={() => handleEditPackage(pkg)}
-                      className="text-blue-600 hover:text-blue-900 font-medium"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDeletePackage(pkg.id)}
-                      className="text-red-600 hover:text-red-900 font-medium"
-                    >
-                      Delete
-                    </button>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <div className="flex items-center space-x-3">
+                      <button
+                        onClick={() => handleEditPackage(pkg)}
+                        className="p-2 text-blue-600 hover:text-blue-900 hover:bg-blue-50 rounded-lg transition-colors"
+                        title="Edit"
+                      >
+                        <EditIcon className="w-5 h-5" />
+                      </button>
+                      <button
+                        onClick={() => handleDeletePackage(pkg.id)}
+                        className="p-2 text-red-600 hover:text-red-900 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Delete"
+                      >
+                        <DeleteIcon className="w-5 h-5" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -641,4 +646,6 @@ const DiscountsPackages = () => {
 };
 
 export default DiscountsPackages;
+
+
 

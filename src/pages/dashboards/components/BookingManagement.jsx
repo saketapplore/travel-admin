@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import CustomTable from '../../../components/CustomTable';
+import { ViewIcon, EditIcon } from '../../../components/icons';
 
 const BookingManagement = () => {
   const [bookingsSubSection, setBookingsSubSection] = useState('bookings');
@@ -202,6 +204,131 @@ const BookingManagement = () => {
         return 'bg-gray-100 text-gray-800';
     }
   };
+
+  const bookingColumns = [
+    {
+      key: 'guestName',
+      header: 'Guest Name',
+      accessor: (row) => row,
+      render: (_, row) => (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            handleViewGuestDetails(row);
+          }}
+          className="text-blue-600 hover:text-blue-900 hover:underline cursor-pointer"
+        >
+          {row.guestName}
+        </button>
+      ),
+      cellClassName: 'text-sm font-medium'
+    },
+    {
+      key: 'propertyName',
+      header: 'Property',
+      accessor: 'propertyName',
+      cellClassName: 'text-sm text-gray-500'
+    },
+    {
+      key: 'checkIn',
+      header: 'Check In',
+      accessor: 'checkIn',
+      cellClassName: 'text-sm text-gray-500'
+    },
+    {
+      key: 'checkOut',
+      header: 'Check Out',
+      accessor: 'checkOut',
+      cellClassName: 'text-sm text-gray-500'
+    },
+    {
+      key: 'amount',
+      header: 'Amount',
+      accessor: 'amount',
+      render: (value) => `$${value}`,
+      cellClassName: 'text-sm text-gray-500'
+    },
+    {
+      key: 'paymentStatus',
+      header: 'Payment Status',
+      accessor: 'paymentStatus',
+      render: (value) => (
+        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getPaymentStatusColor(value)}`}>
+          {value}
+        </span>
+      )
+    },
+    {
+      key: 'bookingStatus',
+      header: 'Booking Status',
+      accessor: 'bookingStatus',
+      render: (value) => (
+        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getBookingStatusColor(value)}`}>
+          {value}
+        </span>
+      )
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      accessor: (row) => row,
+      cellClassName: 'text-sm font-medium space-x-2',
+      render: (_, row) => (
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleEditBooking(row);
+            }}
+            className="p-2 text-blue-600 hover:text-blue-900 hover:bg-blue-50 rounded-lg transition-colors"
+            title="View/Edit"
+          >
+            <EditIcon className="w-5 h-5" />
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleGenerateBookingInvoice(row);
+            }}
+            className="p-2 text-orange-600 hover:text-orange-900 hover:bg-orange-50 rounded-lg transition-colors"
+            title="Generate & Download Invoice"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          </button>
+          {row.bookingStatus === 'Pending' && (
+            <>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleApproveBooking(row.id);
+                }}
+                className="p-2 text-green-600 hover:text-green-900 hover:bg-green-50 rounded-lg transition-colors"
+                title="Approve"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 13l4 4L19 7" />
+                </svg>
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleRejectBooking(row.id);
+                }}
+                className="p-2 text-red-600 hover:text-red-900 hover:bg-red-50 rounded-lg transition-colors"
+                title="Reject"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </>
+          )}
+        </div>
+      )
+    }
+  ];
 
   // Booking Invoice Generation
   const handleGenerateBookingInvoice = (booking) => {
@@ -507,81 +634,11 @@ const BookingManagement = () => {
           <h4 className="text-lg font-semibold text-gray-800">All Bookings</h4>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-gray-50 border-b">
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Guest Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Property</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Check In</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Check Out</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Booking Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {bookings.map((booking) => (
-                <tr key={booking.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button
-                      onClick={() => handleViewGuestDetails(booking)}
-                      className="text-blue-600 hover:text-blue-900 hover:underline cursor-pointer"
-                    >
-                      {booking.guestName}
-                    </button>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{booking.propertyName}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{booking.checkIn}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{booking.checkOut}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${booking.amount}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getPaymentStatusColor(booking.paymentStatus)}`}>
-                      {booking.paymentStatus}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getBookingStatusColor(booking.bookingStatus)}`}>
-                      {booking.bookingStatus}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                    <button
-                      onClick={() => handleEditBooking(booking)}
-                      className="text-blue-600 hover:text-blue-900"
-                    >
-                      View/Edit
-                    </button>
-                    <button
-                      onClick={() => handleGenerateBookingInvoice(booking)}
-                      className="text-orange-600 hover:text-orange-900 ml-2"
-                      title="Generate & Download Invoice"
-                    >
-                      📄 Invoice
-                    </button>
-                    {booking.bookingStatus === 'Pending' && (
-                      <>
-                        <button
-                          onClick={() => handleApproveBooking(booking.id)}
-                          className="text-green-600 hover:text-green-900 ml-2"
-                        >
-                          Approve
-                        </button>
-                        <button
-                          onClick={() => handleRejectBooking(booking.id)}
-                          className="text-red-600 hover:text-red-900 ml-2"
-                        >
-                          Reject
-                        </button>
-                      </>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <CustomTable
+          columns={bookingColumns}
+          data={bookings}
+          emptyMessage="No bookings found."
+        />
         </>
         )}
 
@@ -1127,4 +1184,6 @@ const BookingManagement = () => {
 };
 
 export default BookingManagement;
+
+
 

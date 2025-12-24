@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../../context/AuthContext';
+import CustomTable from '../../../components/CustomTable';
+import { EditIcon, EnableIcon, DisableIcon } from '../../../components/icons';
 
 const AdminAccounts = () => {
   const { userAccounts, createAccount, updateAccount, deleteAccount } = useAuth();
@@ -35,9 +37,19 @@ const AdminAccounts = () => {
     setShowModal(true);
   };
 
-  const handleDeleteAdmin = (id) => {
-    if (window.confirm('Are you sure you want to delete this account?')) {
-      deleteAccount(id);
+  const handleEnableAdmin = (admin) => {
+    const result = updateAccount(admin.id, { ...admin, status: 'Active' });
+    if (!result.success) {
+      setFormError(result.message || 'Failed to enable account');
+    }
+  };
+
+  const handleDisableAdmin = (admin) => {
+    if (window.confirm('Are you sure you want to disable this account?')) {
+      const result = updateAccount(admin.id, { ...admin, status: 'Inactive' });
+      if (!result.success) {
+        setFormError(result.message || 'Failed to disable account');
+      }
     }
   };
 
@@ -67,6 +79,85 @@ const AdminAccounts = () => {
     }
   };
 
+  const columns = [
+    {
+      key: 'name',
+      header: 'Name',
+      accessor: 'name',
+      cellClassName: 'text-sm font-medium text-gray-900'
+    },
+    {
+      key: 'email',
+      header: 'Email',
+      accessor: 'email',
+      cellClassName: 'text-sm text-gray-500'
+    },
+    {
+      key: 'role',
+      header: 'Role',
+      accessor: 'role',
+      cellClassName: 'text-sm text-gray-500'
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      accessor: 'status',
+      render: (value) => (
+        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+          value === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+        }`}>
+          {value}
+        </span>
+      )
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      accessor: (row) => row,
+      cellClassName: 'text-sm font-medium space-x-2',
+      render: (_, row) => {
+        const isActive = row.status === 'Active';
+        return (
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleEditAdmin(row);
+              }}
+              className="p-2 text-blue-600 hover:text-blue-900 hover:bg-blue-50 rounded-lg transition-colors"
+              title="Edit"
+            >
+              <EditIcon className="w-5 h-5" />
+            </button>
+            {isActive ? (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDisableAdmin(row);
+                }}
+                className="p-2 text-red-600 hover:text-red-900 hover:bg-red-50 rounded-lg transition-colors"
+                title="Disable"
+              >
+                <DisableIcon className="w-5 h-5" />
+              </button>
+            ) : (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleEnableAdmin(row);
+                }}
+                className="p-2 text-green-600 hover:text-green-900 hover:bg-green-50 rounded-lg transition-colors"
+                title="Enable"
+              >
+                <EnableIcon className="w-5 h-5" />
+              </button>
+            )}
+          </div>
+        );
+      }
+    }
+  ];
+
   return (
     <>
       <div className="bg-white rounded-lg shadow-md p-6">
@@ -80,57 +171,11 @@ const AdminAccounts = () => {
           </button>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-gray-50 border-b">
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {userAccounts.length === 0 ? (
-                <tr>
-                  <td colSpan="5" className="px-6 py-8 text-center text-gray-500">
-                    No accounts created yet. Click "Create New Account" to add one.
-                  </td>
-                </tr>
-              ) : (
-                userAccounts.map((admin) => (
-                  <tr key={admin.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{admin.name}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{admin.email}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{admin.role}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        admin.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                      }`}>
-                        {admin.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                      <button
-                        onClick={() => handleEditAdmin(admin)}
-                        className="text-blue-600 hover:text-blue-900"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDeleteAdmin(admin.id)}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+        <CustomTable
+          columns={columns}
+          data={userAccounts}
+          emptyMessage="No accounts created yet. Click 'Create New Account' to add one."
+        />
       </div>
 
       {/* Admin Modal */}
@@ -234,4 +279,6 @@ const AdminAccounts = () => {
 };
 
 export default AdminAccounts;
+
+
 

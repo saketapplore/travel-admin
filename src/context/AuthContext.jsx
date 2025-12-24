@@ -3,24 +3,6 @@ import { authAPI } from '../services/api';
 
 const AuthContext = createContext(null);
 
-// Hardcoded Admin credentials for admin panel
-const HARDCODED_ADMIN_CREDENTIALS = {
-  email: 'ayush.rajput@applore.in',
-  password: 'Applore@123',
-  role: 'Super Admin',
-  roleKey: 'super-admin',
-  description: 'Can create, edit, and delete admin accounts and assign roles/permissions'
-};
-
-// Default Super Admin credential (cannot be deleted)
-const SUPER_ADMIN_CREDENTIAL = {
-  email: 'superadmin@travelrumors.com',
-  password: 'superadmin123',
-  role: 'Super Admin',
-  roleKey: 'super-admin',
-  description: 'Can create, edit, and delete admin accounts and assign roles/permissions'
-};
-
 // Role configurations
 const ROLE_CONFIGS = {
   'property-manager': {
@@ -59,32 +41,8 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (email, password) => {
-    const normalizedEmail = email.toLowerCase().trim();
-    
     try {
-      // First, check hardcoded admin credentials
-      if (
-        normalizedEmail === HARDCODED_ADMIN_CREDENTIALS.email.toLowerCase() &&
-        password === HARDCODED_ADMIN_CREDENTIALS.password
-      ) {
-        // Generate a mock token for hardcoded admin to allow API calls
-        const mockToken = `hardcoded_admin_${btoa(HARDCODED_ADMIN_CREDENTIALS.email)}_${Date.now()}`;
-        const userData = {
-          email: HARDCODED_ADMIN_CREDENTIALS.email,
-          role: HARDCODED_ADMIN_CREDENTIALS.role,
-          roleKey: HARDCODED_ADMIN_CREDENTIALS.roleKey,
-          description: HARDCODED_ADMIN_CREDENTIALS.description,
-          name: email.split('@')[0],
-          token: mockToken,
-          apiAuth: false,
-          isHardcoded: true
-        };
-        setUser(userData);
-        localStorage.setItem('adminUser', JSON.stringify(userData));
-        return { success: true };
-      }
-
-      // Try API authentication
+      // Use API authentication only
       const response = await authAPI.login({
         email: email.trim(),
         password: password
@@ -93,41 +51,58 @@ export const AuthProvider = ({ children }) => {
       const data = response.data;
 
       if (data && response.status === 200) {
-        // Flatten token and user from possible nests (data.token, data.data.token, etc.)
+        // Extract token from various possible response structures
         const token =
           data.token ||
           data.access_token ||
           data?.data?.token ||
           data?.data?.access_token;
-        const userFromApi = data.user || data?.data?.user || {};
+        
+        // Extract user data from various possible response structures
+        const userFromApi = data.user || data?.data?.user || data?.admin || data || {};
 
-        // Successful API login - set as Super Admin
-        const userData = {
-          email: userFromApi.email || email.trim(),
-          role: 'Super Admin',
-          roleKey: 'super-admin',
-          description: 'Can create, edit, and delete admin accounts and assign roles/permissions',
-          name: userFromApi.name || data.name || email.split('@')[0],
-          token,
-          apiAuth: true
-        };
-        setUser(userData);
-        localStorage.setItem('adminUser', JSON.stringify(userData));
-        return { success: true };
-      }
+        // Extract role and normalize it
+        let role = userFromApi.role || data.role || 'Super Admin';
+        let roleKey = userFromApi.roleKey || data.roleKey;
+        
+        // If roleKey is not provided, derive it from role
+        if (!roleKey) {
+          // Normalize role string to roleKey format
+          const normalizedRole = role.toLowerCase().trim();
+          if (normalizedRole.includes('super') || normalizedRole.includes('admin')) {
+            roleKey = 'super-admin';
+            role = 'Super Admin';
+          } else if (normalizedRole.includes('property')) {
+            roleKey = 'property-manager';
+            role = 'Property Manager';
+          } else if (normalizedRole.includes('booking')) {
+            roleKey = 'booking-manager';
+            role = 'Booking Manager';
+          } else if (normalizedRole.includes('staff')) {
+            roleKey = 'staff-manager';
+            role = 'Staff Manager';
+          } else {
+            // Default to super-admin for API logins
+            roleKey = 'super-admin';
+            role = 'Super Admin';
+          }
+        }
 
-      // If API response is not successful, check local created accounts
-      const account = userAccounts.find(acc => acc.email.toLowerCase() === normalizedEmail);
-      
-      if (account && account.password === password) {
+        // Build user data object
         const userData = {
-          email: account.email,
-          role: account.role,
-          roleKey: account.roleKey,
-          description: account.description,
-          name: account.name,
-          apiAuth: false
+          email: userFromApi.email || data.email || email.trim(),
+          role: role,
+          roleKey: roleKey,
+          description: userFromApi.description || data.description || 'Can create, edit, and delete admin accounts and assign roles/permissions',
+          name: userFromApi.name || userFromApi.fullName || data.name || data.fullName || email.split('@')[0],
+          token: token,
+          apiAuth: true,
+          id: userFromApi.id || userFromApi._id || data.id || data._id
         };
+        
+        // Log for debugging (remove in production)
+        console.log('Login successful - User data:', userData);
+        
         setUser(userData);
         localStorage.setItem('adminUser', JSON.stringify(userData));
         return { success: true };
@@ -137,48 +112,16 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('Login error:', error);
       
-      // Check hardcoded admin credentials as fallback
-      if (
-        normalizedEmail === HARDCODED_ADMIN_CREDENTIALS.email.toLowerCase() &&
-        password === HARDCODED_ADMIN_CREDENTIALS.password
-      ) {
-        // Generate a mock token for hardcoded admin to allow API calls
-        const mockToken = `hardcoded_admin_${btoa(HARDCODED_ADMIN_CREDENTIALS.email)}_${Date.now()}`;
-        const userData = {
-          email: HARDCODED_ADMIN_CREDENTIALS.email,
-          role: HARDCODED_ADMIN_CREDENTIALS.role,
-          roleKey: HARDCODED_ADMIN_CREDENTIALS.roleKey,
-          description: HARDCODED_ADMIN_CREDENTIALS.description,
-          name: email.split('@')[0],
-          token: mockToken,
-          apiAuth: false,
-          isHardcoded: true
-        };
-        setUser(userData);
-        localStorage.setItem('adminUser', JSON.stringify(userData));
-        return { success: true };
-      }
-      
-      // Fallback to local accounts if API fails
-      const account = userAccounts.find(acc => acc.email.toLowerCase() === normalizedEmail);
-      
-      if (account && account.password === password) {
-        const userData = {
-          email: account.email,
-          role: account.role,
-          roleKey: account.roleKey,
-          description: account.description,
-          name: account.name,
-          apiAuth: false
-        };
-        setUser(userData);
-        localStorage.setItem('adminUser', JSON.stringify(userData));
-        return { success: true };
-      }
+      // Extract error message from API response
+      const errorMessage = 
+        error.response?.data?.message || 
+        error.response?.data?.error ||
+        error.message || 
+        'Invalid email or password. Please try again.';
       
       return { 
         success: false, 
-        message: error.message || 'Invalid email or password. Please try again.' 
+        message: errorMessage
       };
     }
   };
@@ -187,10 +130,6 @@ export const AuthProvider = ({ children }) => {
     const normalizedEmail = accountData.email.toLowerCase().trim();
     
     // Check if email already exists
-    if (normalizedEmail === SUPER_ADMIN_CREDENTIAL.email.toLowerCase()) {
-      return { success: false, message: 'This email is reserved for Super Admin' };
-    }
-
     const emailExists = userAccounts.find(acc => acc.email.toLowerCase() === normalizedEmail);
     if (emailExists) {
       return { success: false, message: 'An account with this email already exists' };

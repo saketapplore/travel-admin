@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import CustomTable from '../../../components/CustomTable';
 
 const FinancialManagement = () => {
   const [transactions, setTransactions] = useState([
@@ -100,6 +101,105 @@ const FinancialManagement = () => {
   };
 
   const filteredTransactions = handleFilterTransactions();
+
+  const columns = [
+    {
+      key: 'invoiceNumber',
+      header: 'Invoice No',
+      accessor: 'invoiceNumber',
+      headerClassName: 'min-w-[140px]',
+      cellClassName: 'text-sm font-medium text-gray-900 font-mono'
+    },
+    {
+      key: 'transactionDate',
+      header: 'Transaction Date',
+      accessor: 'transactionDate',
+      headerClassName: 'min-w-[130px]',
+      cellClassName: 'text-sm text-gray-500'
+    },
+    {
+      key: 'guestName',
+      header: 'Guest Name',
+      accessor: 'guestName',
+      headerClassName: 'min-w-[150px]',
+      cellClassName: 'text-sm font-medium text-gray-900'
+    },
+    {
+      key: 'type',
+      header: 'Booking Type',
+      accessor: 'type',
+      headerClassName: 'min-w-[140px]',
+      cellClassName: 'text-sm text-gray-500'
+    },
+    {
+      key: 'propertyName',
+      header: 'Property/Hotel',
+      accessor: 'propertyName',
+      headerClassName: 'min-w-[160px]',
+      cellClassName: 'text-sm text-gray-500'
+    },
+    {
+      key: 'amount',
+      header: 'Subtotal',
+      accessor: 'amount',
+      headerClassName: 'min-w-[100px]',
+      render: (value) => `₹${value.toLocaleString('en-IN')}`,
+      cellClassName: 'text-sm text-gray-500 font-medium'
+    },
+    {
+      key: 'gstAmount',
+      header: 'GST (18%)',
+      accessor: 'gstAmount',
+      headerClassName: 'min-w-[100px]',
+      render: (value) => `₹${value.toLocaleString('en-IN')}`,
+      cellClassName: 'text-sm text-gray-500 font-medium'
+    },
+    {
+      key: 'totalAmount',
+      header: 'Total Amount',
+      accessor: 'totalAmount',
+      headerClassName: 'min-w-[120px]',
+      render: (value) => `₹${value.toLocaleString('en-IN')}`,
+      cellClassName: 'text-sm font-semibold text-gray-900'
+    },
+    {
+      key: 'paymentMethod',
+      header: 'Payment Method',
+      accessor: 'paymentMethod',
+      headerClassName: 'min-w-[130px]',
+      cellClassName: 'text-sm text-gray-500'
+    },
+    {
+      key: 'paymentStatus',
+      header: 'Status',
+      accessor: 'paymentStatus',
+      headerClassName: 'min-w-[100px]',
+      render: (value) => (
+        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getPaymentStatusColor(value)}`}>
+          {value}
+        </span>
+      )
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      accessor: (row) => row,
+      headerClassName: 'min-w-[100px]',
+      cellClassName: 'text-sm font-medium',
+      render: (_, row) => (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            handleGenerateInvoice(row);
+          }}
+          className="text-orange-600 hover:text-orange-900 font-medium px-2 py-1 rounded hover:bg-orange-50 transition"
+          title="Generate & Download Invoice"
+        >
+          📄 Invoice
+        </button>
+      )
+    }
+  ];
 
   const handleGenerateInvoice = (transaction) => {
     const invoiceData = {
@@ -321,79 +421,15 @@ const FinancialManagement = () => {
       </div>
 
       {/* Transactions Table */}
-      <div className="overflow-x-auto -mx-6 px-6">
-        <table className="w-full min-w-[1400px]">
-          <thead>
-            <tr className="bg-gray-50 border-b">
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[140px]">Invoice No</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[130px]">Transaction Date</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[150px]">Guest Name</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[140px]">Booking Type</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[160px]">Property/Hotel</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[100px]">Subtotal</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[100px]">GST (18%)</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[120px]">Total Amount</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[130px]">Payment Method</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[100px]">Status</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[100px]">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {filteredTransactions.length === 0 ? (
-              <tr>
-                <td colSpan="11" className="px-6 py-8 text-center text-gray-500">
-                  No transactions found
-                </td>
-              </tr>
-            ) : (
-              filteredTransactions.map((transaction) => (
-                <tr key={transaction.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-4 text-sm font-medium text-gray-900 font-mono">
-                    {transaction.invoiceNumber}
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {transaction.transactionDate}
-                  </td>
-                  <td className="px-4 py-4 text-sm font-medium text-gray-900">
-                    {transaction.guestName}
-                  </td>
-                  <td className="px-4 py-4 text-sm text-gray-500">
-                    {transaction.type}
-                  </td>
-                  <td className="px-4 py-4 text-sm text-gray-500">
-                    {transaction.propertyName}
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500 font-medium">
-                    ₹{transaction.amount.toLocaleString('en-IN')}
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500 font-medium">
-                    ₹{transaction.gstAmount.toLocaleString('en-IN')}
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
-                    ₹{transaction.totalAmount.toLocaleString('en-IN')}
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {transaction.paymentMethod}
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getPaymentStatusColor(transaction.paymentStatus)}`}>
-                      {transaction.paymentStatus}
-                    </span>
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
-                    <button
-                      onClick={() => handleGenerateInvoice(transaction)}
-                      className="text-orange-600 hover:text-orange-900 font-medium px-2 py-1 rounded hover:bg-orange-50 transition"
-                      title="Generate & Download Invoice"
-                    >
-                      📄 Invoice
-                    </button>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+      <div className="-mx-6 px-6">
+        <CustomTable
+          columns={columns}
+          data={filteredTransactions}
+          emptyMessage="No transactions found"
+          tableClassName="w-full"
+          containerClassName="overflow-x-auto"
+          minWidth="1400px"
+        />
       </div>
 
       {/* Export Options */}
@@ -436,4 +472,6 @@ const FinancialManagement = () => {
 };
 
 export default FinancialManagement;
+
+
 

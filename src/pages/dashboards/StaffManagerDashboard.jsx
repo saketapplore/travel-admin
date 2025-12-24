@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import CustomTable from '../../components/CustomTable';
+import { EditIcon, DeleteIcon } from '../../components/icons';
 
 const StaffManagerDashboard = () => {
   const [staff, setStaff] = useState([
@@ -47,6 +49,75 @@ const StaffManagerDashboard = () => {
       setStaff(staff.filter(s => s.id !== id));
     }
   };
+
+  const columns = [
+    {
+      key: 'name',
+      header: 'Name',
+      accessor: 'name',
+      cellClassName: 'text-sm font-medium text-gray-900'
+    },
+    {
+      key: 'role',
+      header: 'Role',
+      accessor: 'role',
+      cellClassName: 'text-sm text-gray-500'
+    },
+    {
+      key: 'property',
+      header: 'Property',
+      accessor: 'property',
+      cellClassName: 'text-sm text-gray-500'
+    },
+    {
+      key: 'contact',
+      header: 'Contact',
+      accessor: 'contact',
+      cellClassName: 'text-sm text-gray-500'
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      accessor: 'status',
+      render: (value) => (
+        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+          value === 'Active' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+        }`}>
+          {value}
+        </span>
+      )
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      accessor: (row) => row,
+      cellClassName: 'text-sm font-medium space-x-2',
+      render: (_, row) => (
+        <div className="flex items-center space-x-3">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleEditStaff(row);
+            }}
+            className="p-2 text-blue-600 hover:text-blue-900 hover:bg-blue-50 rounded-lg transition-colors"
+            title="Edit"
+          >
+            <EditIcon className="w-5 h-5" />
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDeleteStaff(row.id);
+            }}
+            className="p-2 text-red-600 hover:text-red-900 hover:bg-red-50 rounded-lg transition-colors"
+            title="Remove"
+          >
+            <DeleteIcon className="w-5 h-5" />
+          </button>
+        </div>
+      )
+    }
+  ];
 
   return (
     <div>
@@ -111,51 +182,11 @@ const StaffManagerDashboard = () => {
           </button>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-gray-50 border-b">
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Property</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {staff.map((staffMember) => (
-                <tr key={staffMember.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{staffMember.name}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{staffMember.role}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{staffMember.property}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{staffMember.contact}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      staffMember.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {staffMember.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                    <button
-                      onClick={() => handleEditStaff(staffMember)}
-                      className="text-blue-600 hover:text-blue-900"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDeleteStaff(staffMember.id)}
-                      className="text-red-600 hover:text-red-900"
-                    >
-                      Remove
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <CustomTable
+          columns={columns}
+          data={staff}
+          emptyMessage="No staff members added yet. Click 'Onboard New Staff' to add one."
+        />
       </div>
 
       {/* Modal */}

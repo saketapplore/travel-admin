@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import CustomTable from '../../components/CustomTable';
+import { ViewIcon } from '../../components/icons';
 
 const BookingManagerDashboard = () => {
   const [bookings, setBookings] = useState([
@@ -131,6 +133,78 @@ const BookingManagerDashboard = () => {
     }
   };
 
+  const columns = [
+    {
+      key: 'guestName',
+      header: 'Guest Name',
+      accessor: 'guestName',
+      cellClassName: 'text-sm font-medium text-gray-900'
+    },
+    {
+      key: 'propertyName',
+      header: 'Property',
+      accessor: 'propertyName',
+      cellClassName: 'text-sm text-gray-500'
+    },
+    {
+      key: 'checkIn',
+      header: 'Check In',
+      accessor: 'checkIn',
+      cellClassName: 'text-sm text-gray-500'
+    },
+    {
+      key: 'checkOut',
+      header: 'Check Out',
+      accessor: 'checkOut',
+      cellClassName: 'text-sm text-gray-500'
+    },
+    {
+      key: 'amount',
+      header: 'Amount',
+      accessor: 'amount',
+      render: (value) => `$${value}`,
+      cellClassName: 'text-sm text-gray-500'
+    },
+    {
+      key: 'paymentStatus',
+      header: 'Payment Status',
+      accessor: 'paymentStatus',
+      render: (value) => (
+        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getPaymentStatusColor(value)}`}>
+          {value}
+        </span>
+      )
+    },
+    {
+      key: 'bookingStatus',
+      header: 'Booking Status',
+      accessor: 'bookingStatus',
+      render: (value) => (
+        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getBookingStatusColor(value)}`}>
+          {value}
+        </span>
+      )
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      accessor: (row) => row,
+      cellClassName: 'text-sm font-medium space-x-2',
+      render: (_, row) => (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            handleViewBooking(row);
+          }}
+          className="p-2 text-blue-600 hover:text-blue-900 hover:bg-blue-50 rounded-lg transition-colors"
+          title="View"
+        >
+          <ViewIcon className="w-5 h-5" />
+        </button>
+      )
+    }
+  ];
+
   return (
     <div>
       <div className="mb-8">
@@ -196,51 +270,11 @@ const BookingManagerDashboard = () => {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-gray-50 border-b">
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Guest Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Property</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Check In</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Check Out</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Booking Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {bookings.map((booking) => (
-                <tr key={booking.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{booking.guestName}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{booking.propertyName}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{booking.checkIn}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{booking.checkOut}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${booking.amount}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getPaymentStatusColor(booking.paymentStatus)}`}>
-                      {booking.paymentStatus}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getBookingStatusColor(booking.bookingStatus)}`}>
-                      {booking.bookingStatus}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                    <button
-                      onClick={() => handleViewBooking(booking)}
-                      className="text-blue-600 hover:text-blue-900"
-                    >
-                      View
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <CustomTable
+          columns={columns}
+          data={bookings}
+          emptyMessage="No bookings found."
+        />
       </div>
 
       {/* Modal */}

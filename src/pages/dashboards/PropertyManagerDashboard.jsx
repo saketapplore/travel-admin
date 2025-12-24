@@ -1,6 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useProperties } from '../../context/PropertyContext';
+import CustomTable from '../../components/CustomTable';
+import { ViewIcon, EditIcon } from '../../components/icons';
 
 const PropertyManagerDashboard = () => {
   const { user } = useAuth();
@@ -24,6 +26,71 @@ const PropertyManagerDashboard = () => {
     });
     setShowModal(true);
   };
+
+  const columns = [
+    {
+      key: 'name',
+      header: 'Property Name',
+      accessor: 'name',
+      cellClassName: 'text-sm font-medium text-gray-900'
+    },
+    {
+      key: 'location',
+      header: 'Location',
+      accessor: 'location',
+      cellClassName: 'text-sm text-gray-500'
+    },
+    {
+      key: 'rooms',
+      header: 'Rooms',
+      accessor: 'rooms',
+      cellClassName: 'text-sm text-gray-500'
+    },
+    {
+      key: 'price',
+      header: 'Price',
+      accessor: 'price',
+      cellClassName: 'text-sm text-gray-500'
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      accessor: 'status',
+      render: (value) => (
+        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+          value === 'Available' ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'
+        }`}>
+          {value}
+        </span>
+      )
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      accessor: (row) => row,
+      cellClassName: 'text-sm font-medium space-x-2',
+      render: (_, row) => (
+        <div className="flex items-center space-x-3">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleViewProperty(row);
+            }}
+            className="p-2 text-blue-600 hover:text-blue-900 hover:bg-blue-50 rounded-lg transition-colors"
+            title="View"
+          >
+            <ViewIcon className="w-5 h-5" />
+          </button>
+          <button
+            className="p-2 text-orange-600 hover:text-orange-900 hover:bg-orange-50 rounded-lg transition-colors"
+            title="Edit"
+          >
+            <EditIcon className="w-5 h-5" />
+          </button>
+        </div>
+      )
+    }
+  ];
 
   // Helper function to parse media and extract image URLs
   const getImageUrls = (property) => {
@@ -119,46 +186,11 @@ const PropertyManagerDashboard = () => {
           <h3 className="text-xl font-semibold text-gray-800">My Properties</h3>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-gray-50 border-b">
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Property Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rooms</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {properties.map((property) => (
-                <tr key={property.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{property.name}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{property.location}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{property.rooms}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{property.price}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      property.status === 'Available' ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'
-                    }`}>
-                      {property.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                    <button
-                      onClick={() => handleViewProperty(property)}
-                      className="text-blue-600 hover:text-blue-900"
-                    >
-                      View
-                    </button>
-                    <button className="text-orange-600 hover:text-orange-900">Edit</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <CustomTable
+          columns={columns}
+          data={properties}
+          emptyMessage="No properties assigned yet."
+        />
       </div>
 
       {/* Modal */}

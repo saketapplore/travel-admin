@@ -13,8 +13,8 @@ const DashboardLayout = ({ children }) => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-orange-500 text-white shadow-lg">
+      {/* Header - Fixed at top */}
+      <header className="fixed top-0 left-0 right-0 bg-orange-500 text-white shadow-lg z-50">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
@@ -23,7 +23,8 @@ const DashboardLayout = ({ children }) => {
             </div>
             <div className="flex items-center space-x-4">
               <div className="text-right">
-                <p className="font-semibold">{user?.role}</p>
+               
+                <p className="font-semibold">{user?.role || 'Admin'}</p>
                 <p className="text-sm text-orange-100">{user?.email}</p>
               </div>
               <button
@@ -37,8 +38,8 @@ const DashboardLayout = ({ children }) => {
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="container mx-auto px-6 py-8">
+      {/* Main Content - Add padding-top to account for fixed header */}
+      <main className="container mx-auto px-6 py-8 pt-24">
         {children}
       </main>
     </div>

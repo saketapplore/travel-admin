@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import CustomTable from '../../../components/CustomTable';
 
 const ActivityLogs = () => {
   const [logs, setLogs] = useState([
@@ -140,6 +141,68 @@ const ActivityLogs = () => {
 
   const filteredLogs = getFilteredLogs();
 
+  const columns = [
+    {
+      key: 'timestamp',
+      header: 'Timestamp',
+      accessor: 'timestamp',
+      cellClassName: 'text-sm text-gray-500'
+    },
+    {
+      key: 'manager',
+      header: 'Manager',
+      accessor: (row) => row,
+      render: (_, row) => (
+        <div>
+          <div className="text-sm font-medium text-gray-900">{row.managerName}</div>
+          <div className="text-sm text-gray-500">{row.managerEmail}</div>
+        </div>
+      )
+    },
+    {
+      key: 'managerType',
+      header: 'Manager Type',
+      accessor: 'managerType',
+      render: (value) => (
+        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+          value === 'Property Manager' ? 'bg-blue-100 text-blue-800' :
+          value === 'Booking Manager' ? 'bg-green-100 text-green-800' :
+          'bg-purple-100 text-purple-800'
+        }`}>
+          {value}
+        </span>
+      )
+    },
+    {
+      key: 'activity',
+      header: 'Activity',
+      accessor: 'activity',
+      render: (value) => (
+        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+          value.includes('Created') || value.includes('Added') || value.includes('Uploaded') ? 'bg-green-100 text-green-800' :
+          value.includes('Updated') ? 'bg-yellow-100 text-yellow-800' :
+          value.includes('Deleted') || value.includes('Rejected') ? 'bg-red-100 text-red-800' :
+          value.includes('Approved') ? 'bg-blue-100 text-blue-800' :
+          'bg-gray-100 text-gray-800'
+        }`}>
+          {value}
+        </span>
+      )
+    },
+    {
+      key: 'details',
+      header: 'Details',
+      accessor: 'details',
+      cellClassName: 'text-sm text-gray-500'
+    },
+    {
+      key: 'ipAddress',
+      header: 'IP Address',
+      accessor: 'ipAddress',
+      cellClassName: 'text-sm text-gray-500 font-mono'
+    }
+  ];
+
   const handleExportLogs = () => {
     const csvContent = [
       ['Timestamp', 'Manager Name', 'Manager Email', 'Manager Type', 'Activity', 'Details', 'IP Address'],
@@ -226,69 +289,11 @@ const ActivityLogs = () => {
       </div>
 
       {/* Logs Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="bg-gray-50 border-b">
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timestamp</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Manager</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Manager Type</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Activity</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">IP Address</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {filteredLogs.length === 0 ? (
-              <tr>
-                <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
-                  No activity logs found
-                </td>
-              </tr>
-            ) : (
-              filteredLogs.map((log) => (
-                <tr key={log.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {log.timestamp}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">{log.managerName}</div>
-                      <div className="text-sm text-gray-500">{log.managerEmail}</div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      log.managerType === 'Property Manager' ? 'bg-blue-100 text-blue-800' :
-                      log.managerType === 'Booking Manager' ? 'bg-green-100 text-green-800' :
-                      'bg-purple-100 text-purple-800'
-                    }`}>
-                      {log.managerType}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      log.activity.includes('Created') || log.activity.includes('Added') || log.activity.includes('Uploaded') ? 'bg-green-100 text-green-800' :
-                      log.activity.includes('Updated') ? 'bg-yellow-100 text-yellow-800' :
-                      log.activity.includes('Deleted') || log.activity.includes('Rejected') ? 'bg-red-100 text-red-800' :
-                      log.activity.includes('Approved') ? 'bg-blue-100 text-blue-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
-                      {log.activity}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">
-                    {log.details}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">
-                    {log.ipAddress}
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+      <CustomTable
+        columns={columns}
+        data={filteredLogs}
+        emptyMessage="No activity logs found"
+      />
 
       {/* Export Button */}
       <div className="mt-6 flex justify-end">
@@ -304,4 +309,6 @@ const ActivityLogs = () => {
 };
 
 export default ActivityLogs;
+
+
 

@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useProperties } from '../../../context/PropertyContext';
+import CustomTable from '../../../components/CustomTable';
+import { EditIcon, DeleteIcon } from '../../../components/icons';
 
 const PropertyManagement = ({ propertyManagers }) => {
   const { properties, addProperty, updateProperty, deleteProperty } = useProperties();
@@ -74,6 +76,81 @@ const PropertyManagement = ({ propertyManagers }) => {
       deleteProperty(id);
     }
   };
+
+  const columns = [
+    {
+      key: 'name',
+      header: 'Property Name',
+      accessor: 'name',
+      cellClassName: 'text-sm font-medium text-gray-900'
+    },
+    {
+      key: 'location',
+      header: 'Location',
+      accessor: 'location',
+      cellClassName: 'text-sm text-gray-500'
+    },
+    {
+      key: 'rooms',
+      header: 'Rooms',
+      accessor: 'rooms',
+      cellClassName: 'text-sm text-gray-500'
+    },
+    {
+      key: 'price',
+      header: 'Price',
+      accessor: 'price',
+      cellClassName: 'text-sm text-gray-500'
+    },
+    {
+      key: 'assignedToName',
+      header: 'Assigned To',
+      accessor: 'assignedToName',
+      cellClassName: 'text-sm text-gray-500'
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      accessor: 'status',
+      render: (value) => (
+        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+          value === 'Available' ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'
+        }`}>
+          {value}
+        </span>
+      )
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      accessor: (row) => row,
+      cellClassName: 'text-sm font-medium space-x-2',
+      render: (_, row) => (
+        <div className="flex items-center space-x-3">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleEditProperty(row);
+            }}
+            className="p-2 text-blue-600 hover:text-blue-900 hover:bg-blue-50 rounded-lg transition-colors"
+            title="Edit"
+          >
+            <EditIcon className="w-5 h-5" />
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDeleteProperty(row.id);
+            }}
+            className="p-2 text-red-600 hover:text-red-900 hover:bg-red-50 rounded-lg transition-colors"
+            title="Delete"
+          >
+            <DeleteIcon className="w-5 h-5" />
+          </button>
+        </div>
+      )
+    }
+  ];
 
   const validatePropertyForm = () => {
     const errors = {};
@@ -303,53 +380,11 @@ const PropertyManagement = ({ propertyManagers }) => {
           </button>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-gray-50 border-b">
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Property Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rooms</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assigned To</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {properties.map((property) => (
-                <tr key={property.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{property.name}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{property.location}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{property.rooms}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{property.price}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{property.assignedToName}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      property.status === 'Available' ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'
-                    }`}>
-                      {property.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                    <button
-                      onClick={() => handleEditProperty(property)}
-                      className="text-blue-600 hover:text-blue-900"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDeleteProperty(property.id)}
-                      className="text-red-600 hover:text-red-900"
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <CustomTable
+          columns={columns}
+          data={properties}
+          emptyMessage="No properties added yet. Click 'Add Property' to create one."
+        />
       </div>
 
       {/* Property Modal */}
@@ -755,4 +790,6 @@ const PropertyManagement = ({ propertyManagers }) => {
 };
 
 export default PropertyManagement;
+
+
 

@@ -172,5 +172,37 @@ export const staffAPI = {
   delete: (id) => api.delete(`/staff/${id}`),
 };
 
+export const permissionAPI = {
+  getAll: () => api.get('/permission'),
+  getById: (id) => api.get(`/permission/${id}`),
+  create: (data) => api.post('/permission', data),
+  update: (id, data) => api.put(`/permission/${id}`, data),
+  delete: (id) => api.delete(`/permission/${id}`),
+};
+
+export const roleAPI = {
+  getAll: () => api.get('/roles'),
+  getById: (id) => api.get(`/roles/${id}`),
+  create: (data) => api.post('/roles', data),
+  update: (id, data) => api.put(`/roles/${id}`, data),
+  enable: (id) => api.put(`/roles/${id}/enable`),
+  disable: (id) => api.put(`/roles/${id}/disable`),
+};
+
+export const faqAPI = {
+  getAll: (page = 1, limit = 10) => api.get(`/faq?page=${page}&limit=${limit}`),
+  getById: (id) => api.get(`/faq/${id}`),
+  create: (data) => api.post('/faq', data),
+  update: (id, data) => api.put(`/faq/${id}`, data),
+  delete: (id, data) => api.delete(`/faq/${id}`, { data }),
+};
+
+export const userAPI = {
+  getAll: () => api.get('/users'),
+  update: (data) => api.put('/users/profile', data),
+  activate: (id) => api.put(`/users/activate/${id}`),
+  deactivate: (id) => api.put(`/users/deactivate/${id}`),
+};
+
 export default api;
 

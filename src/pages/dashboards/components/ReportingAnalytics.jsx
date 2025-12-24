@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import CustomTable from '../../../components/CustomTable';
 
 const ReportingAnalytics = () => {
   const [reportingSubSection, setReportingSubSection] = useState('reports');
@@ -71,6 +72,65 @@ const ReportingAnalytics = () => {
   const isRevenueReport = reportFilters.reportType === 'All' || reportFilters.reportType === 'Revenue';
   const isOccupancyReport = reportFilters.reportType === 'All' || reportFilters.reportType === 'Occupancy';
   const isBookingsReport = reportFilters.reportType === 'All' || reportFilters.reportType === 'Bookings';
+
+  const staffPerformanceColumns = [
+    {
+      key: 'name',
+      header: 'Staff Name',
+      accessor: 'name',
+      cellClassName: 'text-sm font-medium text-gray-900'
+    },
+    {
+      key: 'role',
+      header: 'Role',
+      accessor: 'role',
+      cellClassName: 'text-sm text-gray-500'
+    },
+    {
+      key: 'assignedBookings',
+      header: 'Assigned Bookings',
+      accessor: 'assignedBookings',
+      cellClassName: 'text-sm text-gray-500 font-medium'
+    },
+    {
+      key: 'completedTasks',
+      header: 'Completed Tasks',
+      accessor: 'completedTasks',
+      cellClassName: 'text-sm text-gray-500 font-medium'
+    },
+    {
+      key: 'pendingTasks',
+      header: 'Pending Tasks',
+      accessor: 'pendingTasks',
+      cellClassName: 'text-sm text-gray-500'
+    },
+    {
+      key: 'completionRate',
+      header: 'Completion Rate',
+      accessor: 'completionRate',
+      render: (value) => (
+        <div className="flex items-center">
+          <div className="w-16 bg-gray-200 rounded-full h-2 mr-2">
+            <div
+              className={`h-2 rounded-full ${
+                value >= 90 ? 'bg-green-500' :
+                value >= 75 ? 'bg-yellow-500' : 'bg-red-500'
+              }`}
+              style={{ width: `${value}%` }}
+            ></div>
+          </div>
+          <span className="text-sm font-medium text-gray-700">{value}%</span>
+        </div>
+      )
+    },
+    {
+      key: 'revenueGenerated',
+      header: 'Revenue Generated',
+      accessor: 'revenueGenerated',
+      render: (value) => `₹${value.toLocaleString('en-IN')}`,
+      cellClassName: 'text-sm font-semibold text-gray-900'
+    }
+  ];
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6 w-full max-w-full overflow-hidden">
@@ -310,54 +370,15 @@ Generated on: ${new Date().toLocaleString('en-IN')}
         <p className="text-sm text-gray-600">View performance metrics based on assigned bookings and tasks completed</p>
       </div>
 
-      <div className="overflow-x-auto -mx-6 px-6">
-        <table className="w-full min-w-[1000px]">
-          <thead>
-            <tr className="bg-gray-50 border-b">
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Staff Name</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assigned Bookings</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Completed Tasks</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pending Tasks</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Completion Rate</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Revenue Generated</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {staffPerformance.map((staff) => (
-              <tr key={staff.id} className="hover:bg-gray-50">
-                <td className="px-4 py-4 text-sm font-medium text-gray-900">{staff.name}</td>
-                <td className="px-4 py-4 text-sm text-gray-500">{staff.role}</td>
-                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500 font-medium">
-                  {staff.assignedBookings}
-                </td>
-                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500 font-medium">
-                  {staff.completedTasks}
-                </td>
-                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {staff.pendingTasks}
-                </td>
-                <td className="px-4 py-4 whitespace-nowrap">
-                  <div className="flex items-center">
-                    <div className="w-16 bg-gray-200 rounded-full h-2 mr-2">
-                      <div
-                        className={`h-2 rounded-full ${
-                          staff.completionRate >= 90 ? 'bg-green-500' :
-                          staff.completionRate >= 75 ? 'bg-yellow-500' : 'bg-red-500'
-                        }`}
-                        style={{ width: `${staff.completionRate}%` }}
-                      ></div>
-                    </div>
-                    <span className="text-sm font-medium text-gray-700">{staff.completionRate}%</span>
-                  </div>
-                </td>
-                <td className="px-4 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
-                  ₹{staff.revenueGenerated.toLocaleString('en-IN')}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="-mx-6 px-6">
+        <CustomTable
+          columns={staffPerformanceColumns}
+          data={staffPerformance}
+          emptyMessage="No staff performance data available"
+          tableClassName="w-full"
+          containerClassName="overflow-x-auto"
+          minWidth="1000px"
+        />
       </div>
 
       {/* Export Staff Performance */}
@@ -399,4 +420,6 @@ Generated on: ${new Date().toLocaleString('en-IN')}
 };
 
 export default ReportingAnalytics;
+
+
 
