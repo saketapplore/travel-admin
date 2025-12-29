@@ -1094,39 +1094,6 @@ const BookingManagement = () => {
                     </div>
                   </div>
 
-                  {/* User Information */}
-                  {(selectedBooking.user || selectedBooking.userDetails) && (
-                    <div>
-                      <h4 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">User Information</h4>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                          <p className="text-sm text-gray-900">
-                            {selectedBooking.user?.name || selectedBooking.userDetails?.name || 'N/A'}
-                          </p>
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                          <p className="text-sm text-gray-900">
-                            {selectedBooking.user?.email || selectedBooking.userDetails?.email || 'N/A'}
-                          </p>
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                          <p className="text-sm text-gray-900">
-                            {selectedBooking.user?.phone || selectedBooking.userDetails?.phone || 'N/A'}
-                          </p>
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
-                          <p className="text-sm text-gray-900">
-                            {selectedBooking.user?.country || selectedBooking.userDetails?.country || 'N/A'}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
                   {/* Booking Details */}
                   {selectedBooking.bookingDetails && (
                     <div>
