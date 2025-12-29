@@ -1,129 +1,65 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import CustomTable from '../../../components/CustomTable';
-import { ViewIcon, EditIcon } from '../../../components/icons';
+import { bookingAPI } from '../../../services/api';
+
+// Enums for filters
+const PaymentStatus = {
+  Pending: 'pending',
+  Paid: 'paid',
+  Failed: 'failed',
+  Refunded: 'refunded'
+};
+
+const StatusEnum = {
+  PENDING: 'pending',
+  CONFIRMED: 'confirmed',
+  CANCELLED: 'cancelled',
+  FAILED: 'failed',
+  HOLD_FLIGHT: 'hold_flight',
+  HOLD_FAILED: 'hold_failed'
+};
+
+const BookingType = {
+  Flight: 'FLIGHT',
+  Hotel: 'HOTEL',
+  Property: 'PROPERTY'
+};
 
 const BookingManagement = () => {
-  const [bookingsSubSection, setBookingsSubSection] = useState('bookings');
   
-  const [bookings, setBookings] = useState([
-    {
-      id: 1,
-      guestName: 'John Smith',
-      guestEmail: 'john.smith@email.com',
-      guestPhone: '+1 234-567-8900',
-      propertyName: 'Sunset Villa',
-      propertyId: 1,
-      checkIn: '2024-02-15',
-      checkOut: '2024-02-20',
-      guests: 4,
-      amount: 1500,
-      paymentStatus: 'Paid',
-      bookingStatus: 'Pending',
-      idNumber: 'ID123456789',
-      idPhoto: 'https://via.placeholder.com/300x200?text=ID+Photo+1',
-      createdAt: '2024-01-10',
-      notes: 'Guest requested early check-in',
-      familyMembers: [
-        { name: 'John Smith', email: 'john.smith@email.com', phone: '+1 234-567-8900', relation: 'Adult' },
-        { name: 'Jane Smith', email: 'jane.smith@email.com', phone: '+1 234-567-8901', relation: 'Adult' },
-        { name: 'Tom Smith', email: 'tom.smith@email.com', phone: '+1 234-567-8902', relation: 'Children' },
-        { name: 'Emma Smith', email: 'emma.smith@email.com', phone: '+1 234-567-8903', relation: 'Children' }
-      ]
-    },
-    {
-      id: 2,
-      guestName: 'Sarah Johnson',
-      guestEmail: 'sarah.j@email.com',
-      guestPhone: '+1 234-567-8901',
-      propertyName: 'Ocean View Resort',
-      propertyId: 2,
-      checkIn: '2024-02-18',
-      checkOut: '2024-02-25',
-      guests: 4,
-      amount: 2800,
-      paymentStatus: 'Pending',
-      bookingStatus: 'Pending',
-      idNumber: 'ID987654321',
-      idPhoto: 'https://via.placeholder.com/300x200?text=ID+Photo+2',
-      createdAt: '2024-01-12',
-      notes: 'Family with children',
-      familyMembers: [
-        { name: 'Sarah Johnson', email: 'sarah.j@email.com', phone: '+1 234-567-8901', relation: 'Adult' },
-        { name: 'Mark Johnson', email: 'mark.j@email.com', phone: '+1 234-567-8904', relation: 'Adult' },
-        { name: 'Lily Johnson', email: 'lily.j@email.com', phone: '+1 234-567-8905', relation: 'Children' },
-        { name: 'Noah Johnson', email: 'noah.j@email.com', phone: '+1 234-567-8906', relation: 'Children' }
-      ]
-    },
-    {
-      id: 3,
-      guestName: 'Michael Brown',
-      guestEmail: 'm.brown@email.com',
-      guestPhone: '+1 234-567-8902',
-      propertyName: 'Mountain Retreat',
-      propertyId: 3,
-      checkIn: '2024-02-20',
-      checkOut: '2024-02-27',
-      guests: 2,
-      amount: 2100,
-      paymentStatus: 'Paid',
-      bookingStatus: 'Approved',
-      idNumber: 'ID456789123',
-      idPhoto: 'https://via.placeholder.com/300x200?text=ID+Photo+3',
-      createdAt: '2024-01-08',
-      notes: 'Honeymoon couple',
-      familyMembers: [
-        { name: 'Michael Brown', email: 'm.brown@email.com', phone: '+1 234-567-8902', relation: 'Adult' },
-        { name: 'Sophia Brown', email: 'sophia.brown@email.com', phone: '+1 234-567-8907', relation: 'Adult' }
-      ]
-    },
-    {
-      id: 4,
-      guestName: 'Emily Davis',
-      guestEmail: 'emily.d@email.com',
-      guestPhone: '+1 234-567-8903',
-      propertyName: 'Sunset Villa',
-      propertyId: 1,
-      checkIn: '2024-02-22',
-      checkOut: '2024-02-24',
-      guests: 1,
-      amount: 400,
-      paymentStatus: 'Partial',
-      bookingStatus: 'Rejected',
-      idNumber: 'ID789123456',
-      idPhoto: 'https://via.placeholder.com/300x200?text=ID+Photo+4',
-      createdAt: '2024-01-15',
-      notes: 'Booking cancelled by guest',
-      familyMembers: [
-        { name: 'Emily Davis', email: 'emily.d@email.com', phone: '+1 234-567-8903', relation: 'Adult' }
-      ]
-    },
-    {
-      id: 5,
-      guestName: 'David Wilson',
-      guestEmail: 'd.wilson@email.com',
-      guestPhone: '+1 234-567-8904',
-      propertyName: 'Beach House',
-      propertyId: 4,
-      checkIn: '2024-03-01',
-      checkOut: '2024-03-08',
-      guests: 6,
-      amount: 3500,
-      paymentStatus: 'Paid',
-      bookingStatus: 'Approved',
-      idNumber: 'ID321654987',
-      idPhoto: 'https://via.placeholder.com/300x200?text=ID+Photo+5',
-      createdAt: '2024-01-05',
-      notes: 'Large group booking',
-      familyMembers: [
-        { name: 'David Wilson', email: 'd.wilson@email.com', phone: '+1 234-567-8904', relation: 'Adult' },
-        { name: 'Olivia Wilson', email: 'olivia.w@email.com', phone: '+1 234-567-8908', relation: 'Adult' },
-        { name: 'James Wilson', email: 'james.w@email.com', phone: '+1 234-567-8909', relation: 'Children' },
-        { name: 'Charlotte Wilson', email: 'charlotte.w@email.com', phone: '+1 234-567-8910', relation: 'Children' },
-        { name: 'Robert Wilson', email: 'robert.w@email.com', phone: '+1 234-567-8911', relation: 'Adult' },
-        { name: 'Mary Wilson', email: 'mary.w@email.com', phone: '+1 234-567-8912', relation: 'Adult' }
-      ]
+  const [bookings, setBookings] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState(null);
+  const [viewLoading, setViewLoading] = useState(false);
+  const [viewError, setViewError] = useState('');
+  
+  // Filter states - Initialize from localStorage or use defaults
+  const [filters, setFilters] = useState(() => {
+    const savedFilters = localStorage.getItem('bookingManagementFilters');
+    if (savedFilters) {
+      try {
+        return JSON.parse(savedFilters);
+      } catch (e) {
+        console.error('Error parsing saved filters:', e);
+      }
     }
-  ]);
+    return {
+      status: '',
+      paymentStatus: '',
+      bookingType: '',
+      page: 1,
+      limit: 10
+    };
+  });
+  
+  // Pagination
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: 0
+  });
   
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [editingBooking, setEditingBooking] = useState(null);
@@ -144,109 +80,242 @@ const BookingManagement = () => {
     notes: ''
   });
 
-  // Push Notifications State
-  const [notificationSettings, setNotificationSettings] = useState({
-    confirmations: true,
-    changes: true,
-    cancellations: true,
-    emailEnabled: true,
-    smsEnabled: false,
-    pushEnabled: true
-  });
-  const [notificationHistory, setNotificationHistory] = useState([
-    {
-      id: 1,
-      type: 'Confirmation',
-      message: 'Booking #3 confirmed for Michael Brown',
-      recipient: 'm.brown@email.com',
-      status: 'Sent',
-      timestamp: '2024-01-08 10:30 AM'
-    },
-    {
-      id: 2,
-      type: 'Cancellation',
-      message: 'Booking #4 cancelled for Emily Davis',
-      recipient: 'emily.d@email.com',
-      status: 'Sent',
-      timestamp: '2024-01-15 02:15 PM'
+  // Fetch bookings from API
+  useEffect(() => {
+    fetchBookings();
+  }, [filters]);
+
+  const fetchBookings = async () => {
+    setLoading(true);
+    setError('');
+    
+    try {
+      const response = await bookingAPI.getAll({
+        page: filters.page,
+        limit: filters.limit,
+        status: filters.status,
+        paymentStatus: filters.paymentStatus,
+        bookingType: filters.bookingType
+      });
+      
+      // Handle various response structures
+      const data = response?.data?.data || response?.data || {};
+      const bookingsArray = Array.isArray(data) ? data : (data.bookings || data.items || []);
+      
+      // Normalize bookings data
+      const normalizedBookings = bookingsArray.map(booking => ({
+        id: booking._id || booking.id,
+        bookingType: booking.bookingType || booking.type || booking.booking_type || 'N/A',
+        status: booking.status || booking.bookingStatus || 'pending',
+        username: booking.username || booking.user?.username || booking.guest?.username || booking.guestName || booking.user?.name || 'N/A',
+        userEmail: booking.userEmail || booking.user?.email || booking.guestEmail || booking.guest?.email || '',
+        country: booking.country || booking.user?.country || booking.guest?.country || 'N/A',
+        totalAmount: booking.totalAmount || booking.amount || booking.price || 0,
+        currency: booking.currency || booking.Currency || booking.bookingDetails?.Currency || booking.bookingDetails?.currency || 'N/A',
+        bookingId: booking.bookingId || booking.booking_id || booking._id || booking.id || 'N/A',
+        transactionId: booking.transactionId || booking.transaction_id || booking.transactionId || 'N/A',
+        paymentStatus: booking.paymentStatus || booking.payment_status || 'pending',
+        traceId: booking.TraceId || booking.traceId || booking.trace_id || booking.bookingDetails?.TraceId || 'N/A',
+        // Keep old fields for backward compatibility with modals
+        guestName: booking.guestName || booking.guest?.name || booking.user?.name || 'N/A',
+        guestEmail: booking.guestEmail || booking.guest?.email || booking.user?.email || '',
+        guestPhone: booking.guestPhone || booking.guest?.phone || booking.user?.phone || '',
+        propertyName: booking.propertyName || booking.property?.name || booking.hotel?.name || 'N/A',
+        propertyId: booking.propertyId || booking.property?._id || booking.property?.id,
+        checkIn: booking.checkIn || booking.checkInDate || '',
+        checkOut: booking.checkOut || booking.checkOutDate || '',
+        guests: booking.guests || booking.numberOfGuests || 1,
+        amount: booking.amount || booking.totalAmount || booking.price || 0,
+        bookingStatus: booking.status || booking.bookingStatus || 'pending',
+        idNumber: booking.idNumber || '',
+        idPhoto: booking.idPhoto || '',
+        createdAt: booking.createdAt || booking.created_at || '',
+        notes: booking.notes || booking.remarks || '',
+        familyMembers: booking.familyMembers || booking.guests || []
+      }));
+      
+      setBookings(normalizedBookings);
+      
+      // Update pagination if available
+      if (data.pagination || data.meta) {
+        const paginationData = data.pagination || data.meta;
+        const totalItems = paginationData.total || paginationData.totalItems || 0;
+        const totalPages = paginationData.totalPages || Math.ceil(totalItems / filters.limit);
+        setPagination({
+          currentPage: paginationData.currentPage || paginationData.page || filters.page,
+          totalPages: totalPages || 1,
+          totalItems: totalItems
+        });
+      } else {
+        // If API doesn't provide pagination metadata, estimate based on returned items
+        // If we got exactly 'limit' items, assume there might be more pages
+        const hasMorePages = bookingsArray.length === filters.limit;
+        // Estimate total items: if we have a full page, assume at least (currentPage * limit) + 1 items
+        const estimatedTotal = hasMorePages 
+          ? (filters.page * filters.limit) + 1 
+          : ((filters.page - 1) * filters.limit) + bookingsArray.length;
+        const estimatedPages = hasMorePages 
+          ? filters.page + 1 
+          : filters.page;
+        
+        setPagination({
+          currentPage: filters.page,
+          totalPages: estimatedPages,
+          totalItems: estimatedTotal
+        });
+      }
+      
+      setError('');
+    } catch (error) {
+      console.error('Bookings fetch error:', error);
+      const errorMessage = 
+        error.response?.data?.message || 
+        error.response?.data?.error ||
+        error.message || 
+        'Failed to load bookings. Please try again.';
+      setError(errorMessage);
+      setBookings([]);
+    } finally {
+      setLoading(false);
     }
-  ]);
-  const [showNotificationModal, setShowNotificationModal] = useState(false);
-  const [notificationFormData, setNotificationFormData] = useState({
-    type: 'Confirmation',
-    recipient: '',
-    message: '',
-    bookingId: ''
-  });
+  };
 
   const getPaymentStatusColor = (status) => {
-    switch (status) {
-      case 'Paid':
+    const statusLower = (status || '').toLowerCase();
+    switch (statusLower) {
+      case 'paid':
         return 'bg-green-100 text-green-800';
-      case 'Pending':
+      case 'pending':
         return 'bg-yellow-100 text-yellow-800';
-      case 'Partial':
-        return 'bg-orange-100 text-orange-800';
+      case 'failed':
+        return 'bg-red-100 text-red-800';
+      case 'refunded':
+        return 'bg-blue-100 text-blue-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
   };
 
   const getBookingStatusColor = (status) => {
-    switch (status) {
-      case 'Approved':
+    const statusLower = (status || '').toLowerCase();
+    switch (statusLower) {
+      case 'confirmed':
         return 'bg-green-100 text-green-800';
-      case 'Pending':
+      case 'pending':
         return 'bg-yellow-100 text-yellow-800';
-      case 'Rejected':
+      case 'cancelled':
+        return 'bg-red-100 text-red-800';
+      case 'failed':
+        return 'bg-red-100 text-red-800';
+      case 'hold_flight':
+        return 'bg-orange-100 text-orange-800';
+      case 'hold_failed':
         return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
   };
 
+  const formatStatus = (status) => {
+    if (!status) return 'N/A';
+    return status.split('_').map(word => 
+      word.charAt(0).toUpperCase() + word.slice(1)
+    ).join(' ');
+  };
+
+  const handleFilterChange = (key, value) => {
+    setFilters(prev => {
+      const newFilters = {
+        ...prev,
+        [key]: value,
+        page: 1 // Reset to first page when filter changes
+      };
+      // Save to localStorage
+      localStorage.setItem('bookingManagementFilters', JSON.stringify(newFilters));
+      return newFilters;
+    });
+  };
+
+  const handlePageChange = (newPage) => {
+    setFilters(prev => ({
+      ...prev,
+      page: newPage
+    }));
+    // Scroll to top of table when page changes
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const bookingColumns = [
     {
-      key: 'guestName',
-      header: 'Guest Name',
-      accessor: (row) => row,
-      render: (_, row) => (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            handleViewGuestDetails(row);
-          }}
-          className="text-blue-600 hover:text-blue-900 hover:underline cursor-pointer"
-        >
-          {row.guestName}
-        </button>
+      key: 'bookingType',
+      header: 'Booking Type',
+      accessor: 'bookingType',
+      render: (value) => value || 'N/A',
+      cellClassName: 'text-sm text-gray-700 font-medium'
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      accessor: 'status',
+      render: (value) => (
+        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getBookingStatusColor(value)}`}>
+          {formatStatus(value)}
+        </span>
       ),
-      cellClassName: 'text-sm font-medium'
+      cellClassName: 'text-sm'
     },
     {
-      key: 'propertyName',
-      header: 'Property',
-      accessor: 'propertyName',
+      key: 'username',
+      header: 'Username',
+      accessor: 'username',
+      render: (value) => value || 'N/A',
+      cellClassName: 'text-sm font-medium text-gray-900'
+    },
+    {
+      key: 'userEmail',
+      header: 'User Email',
+      accessor: 'userEmail',
+      render: (value) => value || 'N/A',
       cellClassName: 'text-sm text-gray-500'
     },
     {
-      key: 'checkIn',
-      header: 'Check In',
-      accessor: 'checkIn',
+      key: 'country',
+      header: 'Country',
+      accessor: 'country',
+      render: (value) => value || 'N/A',
       cellClassName: 'text-sm text-gray-500'
     },
     {
-      key: 'checkOut',
-      header: 'Check Out',
-      accessor: 'checkOut',
+      key: 'totalAmount',
+      header: 'Total Amount',
+      accessor: 'totalAmount',
+      render: (value) => value || 0,
+      cellClassName: 'text-sm text-gray-700 font-medium'
+    },
+    {
+      key: 'currency',
+      header: 'Currency',
+      accessor: 'currency',
+      render: (value) => value || 'N/A',
       cellClassName: 'text-sm text-gray-500'
     },
     {
-      key: 'amount',
-      header: 'Amount',
-      accessor: 'amount',
-      render: (value) => `$${value}`,
-      cellClassName: 'text-sm text-gray-500'
+      key: 'bookingId',
+      header: 'Booking ID',
+      accessor: 'bookingId',
+      render: (value) => (
+        <span className="font-mono text-xs">{value || 'N/A'}</span>
+      ),
+      cellClassName: 'text-sm text-gray-700'
+    },
+    {
+      key: 'transactionId',
+      header: 'Transaction ID',
+      accessor: 'transactionId',
+      render: (value) => (
+        <span className="font-mono text-xs">{value || 'N/A'}</span>
+      ),
+      cellClassName: 'text-sm text-gray-700'
     },
     {
       key: 'paymentStatus',
@@ -254,19 +323,19 @@ const BookingManagement = () => {
       accessor: 'paymentStatus',
       render: (value) => (
         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getPaymentStatusColor(value)}`}>
-          {value}
+          {formatStatus(value)}
         </span>
-      )
+      ),
+      cellClassName: 'text-sm'
     },
     {
-      key: 'bookingStatus',
-      header: 'Booking Status',
-      accessor: 'bookingStatus',
+      key: 'traceId',
+      header: 'Trace ID',
+      accessor: 'traceId',
       render: (value) => (
-        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getBookingStatusColor(value)}`}>
-          {value}
-        </span>
-      )
+        <span className="font-mono text-xs">{value || 'N/A'}</span>
+      ),
+      cellClassName: 'text-sm text-gray-700'
     },
     {
       key: 'actions',
@@ -278,12 +347,15 @@ const BookingManagement = () => {
           <button
             onClick={(e) => {
               e.stopPropagation();
-              handleEditBooking(row);
+              handleViewBooking(row);
             }}
             className="p-2 text-blue-600 hover:text-blue-900 hover:bg-blue-50 rounded-lg transition-colors"
-            title="View/Edit"
+            title="View Booking Details"
           >
-            <EditIcon className="w-5 h-5" />
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
           </button>
           <button
             onClick={(e) => {
@@ -297,38 +369,29 @@ const BookingManagement = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
           </button>
-          {row.bookingStatus === 'Pending' && (
-            <>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleApproveBooking(row.id);
-                }}
-                className="p-2 text-green-600 hover:text-green-900 hover:bg-green-50 rounded-lg transition-colors"
-                title="Approve"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 13l4 4L19 7" />
-                </svg>
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleRejectBooking(row.id);
-                }}
-                className="p-2 text-red-600 hover:text-red-900 hover:bg-red-50 rounded-lg transition-colors"
-                title="Reject"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </>
-          )}
         </div>
       )
     }
   ];
+
+  // View Booking Details
+  const handleViewBooking = async (booking) => {
+    setViewModalOpen(true);
+    setViewLoading(true);
+    setViewError('');
+    setSelectedBooking(null);
+    
+    try {
+      const response = await bookingAPI.getById(booking.id);
+      const bookingData = response?.data?.data || response?.data || response;
+      setSelectedBooking(bookingData);
+    } catch (err) {
+      console.error('Error fetching booking details:', err);
+      setViewError(err?.response?.data?.message || err?.message || 'Failed to fetch booking details');
+    } finally {
+      setViewLoading(false);
+    }
+  };
 
   // Booking Invoice Generation
   const handleGenerateBookingInvoice = (booking) => {
@@ -470,78 +533,26 @@ const BookingManagement = () => {
     URL.revokeObjectURL(url);
   };
 
-  const handleApproveBooking = (id) => {
-    const booking = bookings.find(b => b.id === id);
-    setBookings(bookings.map(booking =>
-      booking.id === id ? { ...booking, bookingStatus: 'Approved' } : booking
-    ));
-    
-    if (notificationSettings.confirmations && booking) {
-      sendNotification({
-        type: 'Confirmation',
-        recipient: booking.guestEmail,
-        message: `Your booking for ${booking.propertyName} has been confirmed! Check-in: ${booking.checkIn}`,
-        bookingId: booking.id
-      });
+  const handleApproveBooking = async (id) => {
+    try {
+      // Update booking status via API if endpoint exists
+      // await bookingAPI.update(id, { status: StatusEnum.CONFIRMED });
+      await fetchBookings(); // Refresh list
+    } catch (error) {
+      console.error('Approve booking error:', error);
+      setError('Failed to approve booking. Please try again.');
     }
   };
 
-  const handleRejectBooking = (id) => {
-    const booking = bookings.find(b => b.id === id);
-    setBookings(bookings.map(booking =>
-      booking.id === id ? { ...booking, bookingStatus: 'Rejected' } : booking
-    ));
-    
-    if (notificationSettings.cancellations && booking) {
-      sendNotification({
-        type: 'Cancellation',
-        recipient: booking.guestEmail,
-        message: `Your booking for ${booking.propertyName} has been rejected. Please contact support for assistance.`,
-        bookingId: booking.id
-      });
+  const handleRejectBooking = async (id) => {
+    try {
+      // Update booking status via API if endpoint exists
+      // await bookingAPI.update(id, { status: StatusEnum.CANCELLED });
+      await fetchBookings(); // Refresh list
+    } catch (error) {
+      console.error('Reject booking error:', error);
+      setError('Failed to reject booking. Please try again.');
     }
-  };
-
-  const sendNotification = (notification) => {
-    const newNotification = {
-      id: Date.now(),
-      ...notification,
-      status: 'Sent',
-      timestamp: new Date().toLocaleString('en-US', { 
-        year: 'numeric', 
-        month: '2-digit', 
-        day: '2-digit', 
-        hour: '2-digit', 
-        minute: '2-digit',
-        hour12: true 
-      })
-    };
-    setNotificationHistory(prev => [newNotification, ...prev]);
-    console.log('Sending notification:', newNotification);
-    alert(`Notification sent to ${notification.recipient}`);
-  };
-
-  const handleNotificationSettingsChange = (key, value) => {
-    setNotificationSettings(prev => ({
-      ...prev,
-      [key]: value
-    }));
-  };
-
-  const handleSendManualNotification = (e) => {
-    e.preventDefault();
-    if (!notificationFormData.recipient || !notificationFormData.message) {
-      alert('Please fill in all required fields');
-      return;
-    }
-    sendNotification(notificationFormData);
-    setNotificationFormData({
-      type: 'Confirmation',
-      recipient: '',
-      message: '',
-      bookingId: ''
-    });
-    setShowNotificationModal(false);
   };
 
   const handleEditBooking = (booking) => {
@@ -568,34 +579,18 @@ const BookingManagement = () => {
     setShowGuestDetailsModal(true);
   };
 
-  const handleBookingSubmit = (e) => {
+  const handleBookingSubmit = async (e) => {
     e.preventDefault();
-    const oldBooking = bookings.find(b => b.id === editingBooking.id);
-    const updatedBooking = { ...editingBooking, ...bookingFormData };
-    
-    setBookings(bookings.map(booking =>
-      booking.id === editingBooking.id ? updatedBooking : booking
-    ));
-    
-    if (notificationSettings.changes && oldBooking) {
-      const hasChanges = 
-        oldBooking.checkIn !== updatedBooking.checkIn ||
-        oldBooking.checkOut !== updatedBooking.checkOut ||
-        oldBooking.amount !== updatedBooking.amount ||
-        oldBooking.bookingStatus !== updatedBooking.bookingStatus;
-      
-      if (hasChanges) {
-        sendNotification({
-          type: 'Change',
-          recipient: updatedBooking.guestEmail,
-          message: `Your booking for ${updatedBooking.propertyName} has been updated. Please check your booking details.`,
-          bookingId: updatedBooking.id
-        });
-      }
+    try {
+      // Update booking via API
+      await bookingAPI.update(editingBooking.id, bookingFormData);
+      await fetchBookings(); // Refresh list
+      setShowBookingModal(false);
+      setEditingBooking(null);
+    } catch (error) {
+      console.error('Update booking error:', error);
+      setError('Failed to update booking. Please try again.');
     }
-    
-    setShowBookingModal(false);
-    setEditingBooking(null);
   };
 
   return (
@@ -603,194 +598,126 @@ const BookingManagement = () => {
       <div className="bg-white rounded-lg shadow-md p-6">
         <div className="mb-6">
           <h3 className="text-xl font-semibold text-gray-800 mb-4">Booking Management</h3>
-          <div className="flex space-x-4 mb-4">
-            <button
-              onClick={() => setBookingsSubSection('bookings')}
-              className={`px-6 py-2 rounded-lg font-semibold transition duration-200 ${
-                bookingsSubSection === 'bookings'
-                  ? 'bg-orange-500 text-white shadow-md'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-            >
-              📅 Bookings
-            </button>
-            <button
-              onClick={() => setBookingsSubSection('notifications')}
-              className={`px-6 py-2 rounded-lg font-semibold transition duration-200 ${
-                bookingsSubSection === 'notifications'
-                  ? 'bg-orange-500 text-white shadow-md'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-            >
-              🔔 Push Notifications
-            </button>
+        </div>
+
+        {/* Filters */}
+        <div className="mb-6 bg-gray-50 rounded-lg p-4 border border-gray-200">
+          <h4 className="text-sm font-semibold text-gray-700 mb-4">Filters</h4>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Booking Status</label>
+              <select
+                value={filters.status}
+                onChange={(e) => handleFilterChange('status', e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              >
+                <option value="">All Status</option>
+                <option value={StatusEnum.PENDING}>Pending</option>
+                <option value={StatusEnum.CONFIRMED}>Confirmed</option>
+                <option value={StatusEnum.CANCELLED}>Cancelled</option>
+                <option value={StatusEnum.FAILED}>Failed</option>
+                <option value={StatusEnum.HOLD_FLIGHT}>Hold Flight</option>
+                <option value={StatusEnum.HOLD_FAILED}>Hold Failed</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Payment Status</label>
+              <select
+                value={filters.paymentStatus}
+                onChange={(e) => handleFilterChange('paymentStatus', e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              >
+                <option value="">All Payment Status</option>
+                <option value={PaymentStatus.Pending}>Pending</option>
+                <option value={PaymentStatus.Paid}>Paid</option>
+                <option value={PaymentStatus.Failed}>Failed</option>
+                <option value={PaymentStatus.Refunded}>Refunded</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Booking Type</label>
+              <select
+                value={filters.bookingType}
+                onChange={(e) => handleFilterChange('bookingType', e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              >
+                <option value="">All Types</option>
+                <option value={BookingType.Flight}>Flight</option>
+                <option value={BookingType.Hotel}>Hotel</option>
+                <option value={BookingType.Property}>Property</option>
+              </select>
+            </div>
           </div>
         </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded text-sm">
+            {error}
+          </div>
+        )}
 
         {/* Bookings List */}
-        {bookingsSubSection === 'bookings' && (
-        <>
         <div className="mb-6">
-          <h4 className="text-lg font-semibold text-gray-800">All Bookings</h4>
-        </div>
-
-        <CustomTable
-          columns={bookingColumns}
-          data={bookings}
-          emptyMessage="No bookings found."
-        />
-        </>
-        )}
-
-        {/* Push Notifications Section */}
-        {bookingsSubSection === 'notifications' && (
-        <div className="space-y-6">
-          {/* Notification Settings */}
-          <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
-            <h4 className="text-lg font-semibold text-gray-800 mb-4">Notification Settings</h4>
-            <div className="space-y-4">
-              <div>
-                <p className="text-sm font-medium text-gray-700 mb-3">Enable notifications for:</p>
-                <div className="space-y-2">
-                  <label className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={notificationSettings.confirmations}
-                      onChange={(e) => handleNotificationSettingsChange('confirmations', e.target.checked)}
-                      className="w-4 h-4 text-orange-500 border-gray-300 rounded focus:ring-orange-500"
-                    />
-                    <span className="ml-2 text-sm text-gray-700">Booking Confirmations</span>
-                  </label>
-                  <label className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={notificationSettings.changes}
-                      onChange={(e) => handleNotificationSettingsChange('changes', e.target.checked)}
-                      className="w-4 h-4 text-orange-500 border-gray-300 rounded focus:ring-orange-500"
-                    />
-                    <span className="ml-2 text-sm text-gray-700">Booking Changes</span>
-                  </label>
-                  <label className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={notificationSettings.cancellations}
-                      onChange={(e) => handleNotificationSettingsChange('cancellations', e.target.checked)}
-                      className="w-4 h-4 text-orange-500 border-gray-300 rounded focus:ring-orange-500"
-                    />
-                    <span className="ml-2 text-sm text-gray-700">Booking Cancellations</span>
-                  </label>
-                </div>
-              </div>
+          <h4 className="text-lg font-semibold text-gray-800 mb-4">All Bookings</h4>
+          
+          {loading ? (
+            <div className="text-center py-8 text-gray-500">Loading bookings...</div>
+          ) : (
+            <>
+              <CustomTable
+                columns={bookingColumns}
+                data={bookings}
+                emptyMessage="No bookings found."
+              />
               
-              <div className="border-t pt-4">
-                <p className="text-sm font-medium text-gray-700 mb-3">Notification Channels:</p>
-                <div className="space-y-2">
-                  <label className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={notificationSettings.emailEnabled}
-                      onChange={(e) => handleNotificationSettingsChange('emailEnabled', e.target.checked)}
-                      className="w-4 h-4 text-orange-500 border-gray-300 rounded focus:ring-orange-500"
-                    />
-                    <span className="ml-2 text-sm text-gray-700">Email Notifications</span>
-                  </label>
-                  <label className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={notificationSettings.smsEnabled}
-                      onChange={(e) => handleNotificationSettingsChange('smsEnabled', e.target.checked)}
-                      className="w-4 h-4 text-orange-500 border-gray-300 rounded focus:ring-orange-500"
-                    />
-                    <span className="ml-2 text-sm text-gray-700">SMS Notifications</span>
-                  </label>
-                  <label className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={notificationSettings.pushEnabled}
-                      onChange={(e) => handleNotificationSettingsChange('pushEnabled', e.target.checked)}
-                      className="w-4 h-4 text-orange-500 border-gray-300 rounded focus:ring-orange-500"
-                    />
-                    <span className="ml-2 text-sm text-gray-700">Push Notifications</span>
-                  </label>
+              {/* Pagination */}
+              {bookings.length > 0 && (
+                <div className="flex items-center justify-between mt-4 px-4 py-3 border-t border-gray-200">
+                  <div className="text-sm text-gray-700">
+                    {(() => {
+                      const startIndex = (filters.page - 1) * filters.limit;
+                      const endIndex = Math.min(startIndex + filters.limit, pagination.totalItems || bookings.length);
+                      const totalItems = pagination.totalItems || bookings.length;
+                      return `Showing ${startIndex + 1} to ${endIndex} of ${totalItems} bookings`;
+                    })()}
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => {
+                        if (filters.page > 1) {
+                          handlePageChange(filters.page - 1);
+                        }
+                      }}
+                      disabled={filters.page <= 1}
+                      className={`px-4 py-2 rounded-lg font-semibold transition duration-200 ${
+                        filters.page <= 1
+                          ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                          : 'bg-orange-500 hover:bg-orange-600 text-white cursor-pointer'
+                      }`}
+                    >
+                      Previous
+                    </button>
+                    <button
+                      onClick={() => {
+                        handlePageChange(filters.page + 1);
+                      }}
+                      disabled={bookings.length < filters.limit && filters.page >= (pagination.totalPages || 1)}
+                      className={`px-4 py-2 rounded-lg font-semibold transition duration-200 ${
+                        bookings.length < filters.limit && filters.page >= (pagination.totalPages || 1)
+                          ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                          : 'bg-orange-500 hover:bg-orange-600 text-white cursor-pointer'
+                      }`}
+                    >
+                      Next
+                    </button>
+                  </div>
                 </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Send Manual Notification */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h4 className="text-lg font-semibold text-gray-800">Send Manual Notification</h4>
-              <button
-                onClick={() => {
-                  setNotificationFormData({
-                    type: 'Confirmation',
-                    recipient: '',
-                    message: '',
-                    bookingId: ''
-                  });
-                  setShowNotificationModal(true);
-                }}
-                className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-semibold transition duration-200"
-              >
-                + Send Notification
-              </button>
-            </div>
-            <p className="text-sm text-gray-600">Manually trigger push notifications for specific bookings or events</p>
-          </div>
-
-          {/* Notification History */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h4 className="text-lg font-semibold text-gray-800 mb-4">Notification History</h4>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-gray-50 border-b">
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recipient</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Message</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timestamp</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {notificationHistory.length === 0 ? (
-                    <tr>
-                      <td colSpan="5" className="px-6 py-8 text-center text-gray-500">
-                        No notifications sent yet
-                      </td>
-                    </tr>
-                  ) : (
-                    notificationHistory.map((notification) => (
-                      <tr key={notification.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                            notification.type === 'Confirmation' ? 'bg-green-100 text-green-800' :
-                            notification.type === 'Cancellation' ? 'bg-red-100 text-red-800' :
-                            'bg-yellow-100 text-yellow-800'
-                          }`}>
-                            {notification.type}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{notification.recipient}</td>
-                        <td className="px-6 py-4 text-sm text-gray-500 max-w-md truncate">{notification.message}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                            notification.status === 'Sent' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                          }`}>
-                            {notification.status}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{notification.timestamp}</td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+              )}
+            </>
+          )}
         </div>
-        )}
+
       </div>
 
       {/* Booking Modal */}
@@ -929,10 +856,10 @@ const BookingManagement = () => {
                     onChange={(e) => setBookingFormData({ ...bookingFormData, paymentStatus: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   >
-                    <option value="Pending">Pending</option>
-                    <option value="Paid">Paid</option>
-                    <option value="Partial">Partial</option>
-                    <option value="Refunded">Refunded</option>
+                    <option value="pending">Pending</option>
+                    <option value="paid">Paid</option>
+                    <option value="failed">Failed</option>
+                    <option value="refunded">Refunded</option>
                   </select>
                 </div>
                 <div>
@@ -942,10 +869,10 @@ const BookingManagement = () => {
                     onChange={(e) => setBookingFormData({ ...bookingFormData, bookingStatus: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   >
-                    <option value="Pending">Pending</option>
-                    <option value="Approved">Approved</option>
-                    <option value="Rejected">Rejected</option>
-                    <option value="Cancelled">Cancelled</option>
+                    <option value="pending">Pending</option>
+                    <option value="confirmed">Confirmed</option>
+                    <option value="cancelled">Cancelled</option>
+                    <option value="failed">Failed</option>
                   </select>
                 </div>
                 <div className="col-span-2">
@@ -1099,86 +1026,225 @@ const BookingManagement = () => {
         </div>
       )}
 
-      {/* Notification Modal */}
-      {showNotificationModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
-            <h3 className="text-2xl font-bold mb-6">Send Push Notification</h3>
-            <form onSubmit={handleSendManualNotification}>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Notification Type <span className="text-red-500">*</span></label>
-                  <select
-                    value={notificationFormData.type}
-                    onChange={(e) => setNotificationFormData({ ...notificationFormData, type: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                    required
-                  >
-                    <option value="Confirmation">Confirmation</option>
-                    <option value="Change">Change</option>
-                    <option value="Cancellation">Cancellation</option>
-                  </select>
+      {/* View Booking Details Modal */}
+      {viewModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto py-4">
+          <div className="bg-white rounded-lg p-8 max-w-4xl w-full mx-4 my-8 max-h-[90vh] flex flex-col">
+            <div className="flex justify-between items-center mb-6 flex-shrink-0">
+              <h3 className="text-2xl font-bold text-gray-800">Booking Details</h3>
+              <button
+                onClick={() => {
+                  setViewModalOpen(false);
+                  setSelectedBooking(null);
+                  setViewError('');
+                }}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto pr-2">
+              {viewLoading ? (
+                <div className="text-center py-8 text-gray-500">Loading booking details...</div>
+              ) : viewError ? (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
+                  {viewError}
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Recipient Email <span className="text-red-500">*</span></label>
-                  <input
-                    type="email"
-                    value={notificationFormData.recipient}
-                    onChange={(e) => setNotificationFormData({ ...notificationFormData, recipient: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                    placeholder="guest@email.com"
-                    required
-                  />
+              ) : selectedBooking ? (
+                <div className="space-y-6">
+                  {/* Basic Information */}
+                  <div>
+                    <h4 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">Basic Information</h4>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Booking ID</label>
+                        <p className="text-sm text-gray-900">{selectedBooking._id || selectedBooking.id || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Booking Type</label>
+                        <p className="text-sm text-gray-900">{selectedBooking.bookingType || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                        <p className="text-sm text-gray-900">{selectedBooking.status || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Payment Status</label>
+                        <p className="text-sm text-gray-900">{selectedBooking.paymentStatus || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Transaction ID</label>
+                        <p className="text-sm font-mono text-xs text-gray-900">{selectedBooking.transactionId || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Trace ID</label>
+                        <p className="text-sm font-mono text-xs text-gray-900">{selectedBooking.TraceId || selectedBooking.traceId || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Total Amount</label>
+                        <p className="text-sm text-gray-900">{selectedBooking.totalAmount || 0} {selectedBooking.currency || selectedBooking.Currency || ''}</p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Order ID</label>
+                        <p className="text-sm font-mono text-xs text-gray-900">{selectedBooking.orderId || 'N/A'}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* User Information */}
+                  {(selectedBooking.user || selectedBooking.userDetails) && (
+                    <div>
+                      <h4 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">User Information</h4>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                          <p className="text-sm text-gray-900">
+                            {selectedBooking.user?.name || selectedBooking.userDetails?.name || 'N/A'}
+                          </p>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                          <p className="text-sm text-gray-900">
+                            {selectedBooking.user?.email || selectedBooking.userDetails?.email || 'N/A'}
+                          </p>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                          <p className="text-sm text-gray-900">
+                            {selectedBooking.user?.phone || selectedBooking.userDetails?.phone || 'N/A'}
+                          </p>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+                          <p className="text-sm text-gray-900">
+                            {selectedBooking.user?.country || selectedBooking.userDetails?.country || 'N/A'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Booking Details */}
+                  {selectedBooking.bookingDetails && (
+                    <div>
+                      <h4 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">Booking Details</h4>
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <pre className="text-xs text-gray-700 whitespace-pre-wrap overflow-x-auto">
+                          {JSON.stringify(selectedBooking.bookingDetails, null, 2)}
+                        </pre>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Flight Details */}
+                  {selectedBooking.bookingDetails?.flightDetails && (
+                    <div>
+                      <h4 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">Flight Details</h4>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Origin</label>
+                          <p className="text-sm text-gray-900">{selectedBooking.bookingDetails.flightDetails.Origin || 'N/A'}</p>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Destination</label>
+                          <p className="text-sm text-gray-900">{selectedBooking.bookingDetails.flightDetails.Destination || 'N/A'}</p>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Airline</label>
+                          <p className="text-sm text-gray-900">{selectedBooking.bookingDetails.flightDetails.AirlineName || 'N/A'}</p>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Flight Number</label>
+                          <p className="text-sm text-gray-900">{selectedBooking.bookingDetails.flightDetails.FlightNumber || 'N/A'}</p>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">PNR</label>
+                          <p className="text-sm text-gray-900">{selectedBooking.bookingDetails.flightDetails.PNR || 'N/A'}</p>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Departure Time</label>
+                          <p className="text-sm text-gray-900">
+                            {selectedBooking.bookingDetails.flightDetails.DepartureTime 
+                              ? new Date(selectedBooking.bookingDetails.flightDetails.DepartureTime).toLocaleString()
+                              : 'N/A'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Hotel Details */}
+                  {selectedBooking.bookingDetails?.hotelDetails && (
+                    <div>
+                      <h4 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">Hotel Details</h4>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Hotel Name</label>
+                          <p className="text-sm text-gray-900">{selectedBooking.bookingDetails.hotelDetails.HotelName || 'N/A'}</p>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Confirmation Number</label>
+                          <p className="text-sm text-gray-900">{selectedBooking.bookingDetails.hotelDetails.ConfirmationNo || 'N/A'}</p>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Check In</label>
+                          <p className="text-sm text-gray-900">{selectedBooking.bookingDetails.hotelDetails.checkIn || 'N/A'}</p>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Check Out</label>
+                          <p className="text-sm text-gray-900">{selectedBooking.bookingDetails.hotelDetails.checkOut || 'N/A'}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Timestamps */}
+                  <div>
+                    <h4 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">Timestamps</h4>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Created At</label>
+                        <p className="text-sm text-gray-900">
+                          {selectedBooking.createdAt 
+                            ? new Date(selectedBooking.createdAt).toLocaleString()
+                            : 'N/A'}
+                        </p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Updated At</label>
+                        <p className="text-sm text-gray-900">
+                          {selectedBooking.updatedAt 
+                            ? new Date(selectedBooking.updatedAt).toLocaleString()
+                            : 'N/A'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Booking ID (Optional)</label>
-                  <input
-                    type="text"
-                    value={notificationFormData.bookingId}
-                    onChange={(e) => setNotificationFormData({ ...notificationFormData, bookingId: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                    placeholder="Booking ID"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Message <span className="text-red-500">*</span></label>
-                  <textarea
-                    value={notificationFormData.message}
-                    onChange={(e) => setNotificationFormData({ ...notificationFormData, message: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                    rows="4"
-                    placeholder="Enter notification message..."
-                    required
-                  />
-                </div>
-              </div>
-              <div className="flex space-x-3 mt-6">
-                <button
-                  type="submit"
-                  className="flex-1 bg-orange-500 hover:bg-orange-600 text-white py-2 rounded-lg font-semibold transition duration-200"
-                >
-                  Send Notification
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowNotificationModal(false);
-                    setNotificationFormData({
-                      type: 'Confirmation',
-                      recipient: '',
-                      message: '',
-                      bookingId: ''
-                    });
-                  }}
-                  className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 rounded-lg font-semibold transition duration-200"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
+              ) : (
+                <div className="text-center py-8 text-gray-500">No booking details available</div>
+              )}
+            </div>
+
+            <div className="mt-6 flex justify-end flex-shrink-0">
+              <button
+                onClick={() => {
+                  setViewModalOpen(false);
+                  setSelectedBooking(null);
+                  setViewError('');
+                }}
+                className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg font-semibold transition duration-200"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}
+
     </>
   );
 };

@@ -62,8 +62,19 @@ export const AuthProvider = ({ children }) => {
         const userFromApi = data.user || data?.data?.user || data?.admin || data || {};
 
         // Extract role and normalize it
+        // Handle role as string or object
         let role = userFromApi.role || data.role || 'Super Admin';
         let roleKey = userFromApi.roleKey || data.roleKey;
+        
+        // If role is an object, extract the name property
+        if (role && typeof role === 'object' && role !== null) {
+          role = role.name || role.roleName || role.role || 'Super Admin';
+        }
+        
+        // Ensure role is a string
+        if (typeof role !== 'string') {
+          role = String(role || 'Super Admin');
+        }
         
         // If roleKey is not provided, derive it from role
         if (!roleKey) {
@@ -182,6 +193,93 @@ export const AuthProvider = ({ children }) => {
     return userAccounts;
   };
 
+  const refreshUser = async () => {
+    try {
+      const response = await authAPI.getCurrentUser();
+      const data = response.data;
+
+      if (data && response.status === 200) {
+        // Extract user data from various possible response structures
+        const userFromApi = data.user || data?.data?.user || data?.admin || data || {};
+
+        // Extract role and normalize it
+        // Handle role as string or object
+        let role = userFromApi.role || data.role || 'Super Admin';
+        let roleKey = userFromApi.roleKey || data.roleKey;
+
+        // If role is an object, extract the name property
+        if (role && typeof role === 'object' && role !== null) {
+          role = role.name || role.roleName || role.role || 'Super Admin';
+        }
+        
+        // Ensure role is a string
+        if (typeof role !== 'string') {
+          role = String(role || 'Super Admin');
+        }
+
+        // If roleKey is not provided, derive it from role
+        if (!roleKey) {
+          const normalizedRole = role.toLowerCase().trim();
+          if (normalizedRole.includes('super') || normalizedRole.includes('admin')) {
+            roleKey = 'super-admin';
+            role = 'Super Admin';
+          } else if (normalizedRole.includes('property')) {
+            roleKey = 'property-manager';
+            role = 'Property Manager';
+          } else if (normalizedRole.includes('booking')) {
+            roleKey = 'booking-manager';
+            role = 'Booking Manager';
+          } else if (normalizedRole.includes('staff')) {
+            roleKey = 'staff-manager';
+            role = 'Staff Manager';
+          } else {
+            roleKey = 'super-admin';
+            role = 'Super Admin';
+          }
+        }
+
+        // Get existing token from localStorage
+        const savedUser = localStorage.getItem('adminUser');
+        let existingToken = null;
+        if (savedUser) {
+          try {
+            const existingUserData = JSON.parse(savedUser);
+            existingToken = existingUserData.token;
+          } catch (e) {
+            console.error('Error parsing existing user data:', e);
+          }
+        }
+
+        // Build updated user data object
+        const userData = {
+          email: userFromApi.email || data.email || user?.email,
+          role: role,
+          roleKey: roleKey,
+          description: userFromApi.description || data.description || user?.description || 'Can create, edit, and delete admin accounts and assign roles/permissions',
+          name: userFromApi.name || userFromApi.fullName || data.name || data.fullName || user?.name,
+          token: existingToken || user?.token, // Keep existing token
+          apiAuth: true,
+          id: userFromApi.id || userFromApi._id || data.id || data._id || user?.id
+        };
+
+        setUser(userData);
+        localStorage.setItem('adminUser', JSON.stringify(userData));
+        return { success: true, user: userData };
+      }
+
+      return { success: false, message: 'Failed to refresh user data' };
+    } catch (error) {
+      console.error('Refresh user error:', error);
+      
+      // If refresh fails, it might mean token is invalid
+      // Don't logout automatically, let the component handle it
+      return { 
+        success: false, 
+        message: error.response?.data?.message || error.message || 'Failed to refresh user data'
+      };
+    }
+  };
+
   const logout = () => {
     setUser(null);
     localStorage.removeItem('adminUser');
@@ -193,6 +291,7 @@ export const AuthProvider = ({ children }) => {
       login, 
       logout, 
       loading,
+      refreshUser,
       createAccount,
       updateAccount,
       deleteAccount,

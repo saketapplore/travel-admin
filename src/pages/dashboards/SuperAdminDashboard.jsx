@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useProperties } from '../../context/PropertyContext';
 import Sidebar from '../../components/Sidebar';
 import PropertyManagement from './components/PropertyManagement';
@@ -13,17 +13,30 @@ import ActivityLogs from './components/ActivityLogs';
 import FAQs from './components/FAQs';
 
 const SuperAdminDashboard = () => {
-  // Active Section State
-  const [activeSection, setActiveSection] = useState('properties');
+  // Active Section State - Initialize from localStorage or default to 'properties'
+  const [activeSection, setActiveSection] = useState(() => {
+    const savedSection = localStorage.getItem('superAdminActiveSection');
+    return savedSection || 'properties';
+  });
   const { propertyManagers } = useProperties();
+
+  // Save active section to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('superAdminActiveSection', activeSection);
+  }, [activeSection]);
+
+  // Handler to update active section
+  const handleSectionChange = (section) => {
+    setActiveSection(section);
+  };
 
   return (
     <div className="relative">
-      <Sidebar activeSection={activeSection} setActiveSection={setActiveSection} />
+      <Sidebar activeSection={activeSection} setActiveSection={handleSectionChange} />
       <div className="flex-1 min-w-0 lg:ml-[280px] lg:pl-0">
         <div className="mb-8">
-          <h2 className="text-3xl font-bold text-gray-800 mb-2">Super Admin Dashboard</h2>
-          <p className="text-gray-600">
+          {/* <h2 className="text-3xl font-bold text-gray-800 mb-2">Super Admin Dashboard</h2> */}
+          {/* <p className="text-gray-600">
             {activeSection === 'properties' 
               ? 'Manage properties and assign them to property managers'
               : activeSection === 'admins'
@@ -45,7 +58,7 @@ const SuperAdminDashboard = () => {
               : activeSection === 'faqs'
               ? 'Manage frequently asked questions and answers'
               : 'Generate reports on bookings, revenue, occupancy, and view staff performance metrics'}
-          </p>
+          </p> */}
         </div>
 
         {activeSection === 'properties' && <PropertyManagement propertyManagers={propertyManagers} />}

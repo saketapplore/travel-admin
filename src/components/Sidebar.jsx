@@ -8,7 +8,7 @@ const Sidebar = ({ activeSection, setActiveSection }) => {
     { id: 'roles', label: 'Roles & Permissions', icon: '🔐' },
     { id: 'bookings', label: 'Booking Management', icon: '📅' },
     { id: 'discounts', label: 'Discounts & Packages', icon: '🎁' },
-    { id: 'financial', label: 'Financial Management', icon: '💰' },
+    { id: 'financial', label: 'Transactions', icon: '💰' },
     { id: 'reporting', label: 'Reporting & Analytics', icon: '📊' },
     { id: 'logs', label: 'Activity Logs', icon: '📝' },
     { id: 'faqs', label: 'FAQs', icon: '❓' },

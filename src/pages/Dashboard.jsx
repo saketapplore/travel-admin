@@ -27,7 +27,17 @@ const Dashboard = () => {
 
   const renderDashboard = () => {
     // Normalize roleKey to handle variations
-    const roleKey = user?.roleKey?.toLowerCase()?.trim();
+    // Ensure roleKey is a string before calling toLowerCase
+    let roleKey = user?.roleKey;
+    if (roleKey && typeof roleKey === 'string') {
+      roleKey = roleKey.toLowerCase().trim();
+    } else if (roleKey) {
+      // If roleKey is not a string, convert it
+      roleKey = String(roleKey).toLowerCase().trim();
+    } else {
+      // Default to super-admin if no roleKey
+      roleKey = 'super-admin';
+    }
     
     switch (roleKey) {
       case 'super-admin':

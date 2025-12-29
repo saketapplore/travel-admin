@@ -1,5 +1,20 @@
 import axios from 'axios';
 
+// Utility function to decode JWT token (without verification)
+const decodeJWT = (token) => {
+  try {
+    if (!token) return null;
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    const payload = parts[1];
+    const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
+    return decoded;
+  } catch (error) {
+    console.error('Error decoding JWT:', error);
+    return null;
+  }
+};
+
 // Create axios instance with base URL
 const api = axios.create({
   baseURL: 'https://travel-rumours-api.applore.in/api/admin',
@@ -19,10 +34,44 @@ api.interceptors.request.use(
         const userData = JSON.parse(adminUser);
         if (userData.token) {
           config.headers.Authorization = `Bearer ${userData.token}`;
+          
+          // Decode token to check actual role in JWT
+          const tokenPayload = decodeJWT(userData.token);
+          
+          // Log user info in development (without exposing full token)
+          if (process.env.NODE_ENV === 'development') {
+            console.log('API Request - User Info:', {
+              email: userData.email,
+              role: userData.role,
+              roleKey: userData.roleKey,
+              tokenPresent: !!userData.token,
+              tokenLength: userData.token?.length || 0,
+              tokenRole: tokenPayload?.role || tokenPayload?.roleKey || tokenPayload?.userRole || 'Not found in token',
+              tokenEmail: tokenPayload?.email || tokenPayload?.userEmail || 'Not found in token',
+              fullTokenPayload: tokenPayload // For debugging
+            });
+          }
+          
+          // Warn if there's a mismatch between localStorage role and token role
+          if (tokenPayload) {
+            const tokenRole = tokenPayload.role || tokenPayload.roleKey || tokenPayload.userRole;
+            const localStorageRole = userData.role || userData.roleKey;
+            if (tokenRole && localStorageRole && tokenRole.toLowerCase() !== localStorageRole.toLowerCase()) {
+              console.warn('Role mismatch detected:', {
+                localStorageRole: localStorageRole,
+                tokenRole: tokenRole,
+                message: 'The role in the token differs from localStorage. The backend will use the token role.'
+              });
+            }
+          }
+        } else {
+          console.warn('No token found in user data');
         }
       } catch (error) {
         console.error('Error parsing admin user data:', error);
       }
+    } else {
+      console.warn('No adminUser found in localStorage');
     }
 
     // Log request details in development
@@ -31,6 +80,7 @@ api.interceptors.request.use(
         method: config.method?.toUpperCase(),
         url: config.url,
         baseURL: config.baseURL,
+        hasAuth: !!config.headers.Authorization,
         data: config.data,
       });
     }
@@ -78,23 +128,26 @@ api.interceptors.response.use(
           // For other endpoints, let the component handle the error
           const url = error.config?.url || '';
           const isCriticalEndpoint = url.includes('/login') || url.includes('/logout') || url.includes('/auth');
-          
+
           if (isCriticalEndpoint) {
             localStorage.removeItem('adminUser');
             if (window.location.pathname !== '/login') {
               window.location.href = '/login';
             }
           }
-          
+
           return Promise.reject({
             message: 'Session expired. Please login again.',
             status,
           });
 
         case 403:
+          // For 403 errors, preserve the original error message from backend
+          const originalMessage = data?.message || 'Access denied. You do not have permission.';
           return Promise.reject({
-            message: 'Access denied. You do not have permission.',
+            message: originalMessage,
             status,
+            data: data, // Include full error data for debugging
           });
 
         case 404:
@@ -157,7 +210,16 @@ export const accountAPI = {
 };
 
 export const bookingAPI = {
-  getAll: () => api.get('/bookings'),
+  getAll: (params = {}) => {
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.append('page', params.page);
+    if (params.limit) queryParams.append('limit', params.limit);
+    if (params.status) queryParams.append('status', params.status);
+    if (params.paymentStatus) queryParams.append('paymentStatus', params.paymentStatus);
+    if (params.bookingType) queryParams.append('bookingType', params.bookingType);
+    const queryString = queryParams.toString();
+    return api.get(`/bookings${queryString ? `?${queryString}` : ''}`);
+  },
   getById: (id) => api.get(`/bookings/${id}`),
   create: (data) => api.post('/bookings', data),
   update: (id, data) => api.put(`/bookings/${id}`, data),
@@ -182,6 +244,7 @@ export const permissionAPI = {
 
 export const roleAPI = {
   getAll: () => api.get('/roles'),
+  getActive: () => api.get('/roles/active'),
   getById: (id) => api.get(`/roles/${id}`),
   create: (data) => api.post('/roles', data),
   update: (id, data) => api.put(`/roles/${id}`, data),
@@ -198,10 +261,31 @@ export const faqAPI = {
 };
 
 export const userAPI = {
-  getAll: () => api.get('/users'),
+  getAll: (params = {}) => {
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.append('page', params.page);
+    if (params.limit) queryParams.append('limit', params.limit);
+    const queryString = queryParams.toString();
+    return api.get(`/users${queryString ? `?${queryString}` : ''}`);
+  },
+  create: (data) => api.post('/users', data),
   update: (data) => api.put('/users/profile', data),
   activate: (id) => api.put(`/users/activate/${id}`),
   deactivate: (id) => api.put(`/users/deactivate/${id}`),
+  manage: (id, data) => api.put(`/users/manage/${id}`, data),
+};
+
+export const transactionAPI = {
+  getAll: (params = {}) => {
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.append('page', params.page);
+    if (params.limit) queryParams.append('limit', params.limit);
+    if (params.bookingType) queryParams.append('bookingType', params.bookingType);
+    if (params.status) queryParams.append('status', params.status);
+    if (params.search) queryParams.append('search', params.search);
+    const queryString = queryParams.toString();
+    return api.get(`/transactions${queryString ? `?${queryString}` : ''}`);
+  },
 };
 
 export default api;
