@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { userAPI, roleAPI } from '../../../services/api';
+import { userService } from '../../../services/userService';
+import { roleService } from '../../../services/roleService';
 import { useAuth } from '../../../context/AuthContext';
 
 const AdminUsers = () => {
@@ -50,7 +51,7 @@ const AdminUsers = () => {
   const fetchRoles = async () => {
     setRolesLoading(true);
     try {
-      const response = await roleAPI.getAll();
+      const response = await roleService.getAll();
       const data = response?.data?.data || response?.data || [];
       const rolesArray = Array.isArray(data) ? data : [];
       setRoles(rolesArray);
@@ -65,7 +66,7 @@ const AdminUsers = () => {
   const fetchActiveRoles = async () => {
     setActiveRolesLoading(true);
     try {
-      const response = await roleAPI.getActive();
+      const response = await roleService.getActive();
       const data = response?.data?.data || response?.data || [];
       const rolesArray = Array.isArray(data) ? data : [];
       setActiveRoles(rolesArray);
@@ -83,7 +84,7 @@ const AdminUsers = () => {
     setError('');
 
     try {
-      const response = await userAPI.getAll({ limit: 1000 });
+      const response = await userService.getAll({ limit: 1000 });
       // Handle various response structures
       const data = response?.data?.data || response?.data || [];
       const usersArray = Array.isArray(data) ? data : [];
@@ -141,7 +142,7 @@ const AdminUsers = () => {
     );
 
     try {
-      const enableResponse = await userAPI.activate(id);
+      const enableResponse = await userService.activate(id);
       console.log('Enable API response:', enableResponse);
 
       // Refresh users list to get latest data
@@ -189,7 +190,7 @@ const AdminUsers = () => {
     );
 
     try {
-      const disableResponse = await userAPI.deactivate(id);
+      const disableResponse = await userService.deactivate(id);
       console.log('Disable API response:', disableResponse);
 
       // Refresh users list to get latest data
@@ -239,7 +240,7 @@ const AdminUsers = () => {
     }
 
     try {
-      const response = await userAPI.create({
+      const response = await userService.create({
         email: createForm.email.trim(),
         password: createForm.password,
         role: createForm.role
@@ -380,7 +381,7 @@ const AdminUsers = () => {
         }
       });
 
-      const response = await userAPI.manage(editingUser._id || editingUser.id, updateData);
+      const response = await userService.manage(editingUser._id || editingUser.id, updateData);
       console.log('Update user response:', response);
 
       // Close modal and reset form

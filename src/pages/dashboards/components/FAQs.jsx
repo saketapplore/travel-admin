@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { faqAPI } from '../../../services/api';
+import { faqService } from '../../../services/faqService';
 import { EditIcon, DeleteIcon } from '../../../components/icons';
 
 const FAQs = () => {
@@ -28,7 +28,7 @@ const FAQs = () => {
     setError('');
     
     try {
-      const response = await faqAPI.getAll(currentPage, PAGE_SIZE);
+      const response = await faqService.getAll(currentPage, PAGE_SIZE);
       // Handle various response structures
       const data = response?.data?.data || response?.data || {};
       const faqsArray = Array.isArray(data) ? data : (data.faqs || data.items || []);
@@ -88,7 +88,7 @@ const FAQs = () => {
     try {
       // Based on screenshot, DELETE requires answer in body
       const faq = faqs.find(f => (f._id === id || f.id === id));
-      await faqAPI.delete(id, { answer: faq?.answer || '' });
+      await faqService.delete(id, { answer: faq?.answer || '' });
       await fetchFAQs();
     } catch (error) {
       console.error('Delete FAQ error:', error);
@@ -115,10 +115,10 @@ const FAQs = () => {
       if (editingFaq) {
         // Update FAQ - based on screenshot, PUT only requires answer
         const faqId = editingFaq._id || editingFaq.id;
-        await faqAPI.update(faqId, { answer: formData.answer.trim() });
+        await faqService.update(faqId, { answer: formData.answer.trim() });
       } else {
         // Create FAQ - requires both question and answer
-        await faqAPI.create({
+        await faqService.create({
           question: formData.question.trim(),
           answer: formData.answer.trim()
         });

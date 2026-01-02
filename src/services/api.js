@@ -17,7 +17,7 @@ const decodeJWT = (token) => {
 
 // Create axios instance with base URL
 const api = axios.create({
-  baseURL: 'https://travel-rumours-api.applore.in/api/admin',
+  baseURL: 'http://localhost:8080/api/admin',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -186,107 +186,6 @@ api.interceptors.response.use(
   }
 );
 
-// API service methods
-export const authAPI = {
-  login: (credentials) => api.post('/login', credentials),
-  logout: () => api.post('/logout'),
-  getCurrentUser: () => api.get('/me'),
-};
-
-export const propertyAPI = {
-  getAll: () => api.get('/properties'),
-  getById: (id) => api.get(`/properties/${id}`),
-  create: (data) => api.post('/properties', data),
-  update: (id, data) => api.put(`/properties/${id}`, data),
-  delete: (id) => api.delete(`/properties/${id}`),
-};
-
-export const accountAPI = {
-  getAll: () => api.get('/accounts'),
-  getById: (id) => api.get(`/accounts/${id}`),
-  create: (data) => api.post('/accounts', data),
-  update: (id, data) => api.put(`/accounts/${id}`, data),
-  delete: (id) => api.delete(`/accounts/${id}`),
-};
-
-export const bookingAPI = {
-  getAll: (params = {}) => {
-    const queryParams = new URLSearchParams();
-    if (params.page) queryParams.append('page', params.page);
-    if (params.limit) queryParams.append('limit', params.limit);
-    if (params.status) queryParams.append('status', params.status);
-    if (params.paymentStatus) queryParams.append('paymentStatus', params.paymentStatus);
-    if (params.bookingType) queryParams.append('bookingType', params.bookingType);
-    const queryString = queryParams.toString();
-    return api.get(`/bookings${queryString ? `?${queryString}` : ''}`);
-  },
-  getById: (id) => api.get(`/bookings/${id}`),
-  create: (data) => api.post('/bookings', data),
-  update: (id, data) => api.put(`/bookings/${id}`, data),
-  delete: (id) => api.delete(`/bookings/${id}`),
-};
-
-export const staffAPI = {
-  getAll: () => api.get('/staff'),
-  getById: (id) => api.get(`/staff/${id}`),
-  create: (data) => api.post('/staff', data),
-  update: (id, data) => api.put(`/staff/${id}`, data),
-  delete: (id) => api.delete(`/staff/${id}`),
-};
-
-export const permissionAPI = {
-  getAll: () => api.get('/permission'),
-  getById: (id) => api.get(`/permission/${id}`),
-  create: (data) => api.post('/permission', data),
-  update: (id, data) => api.put(`/permission/${id}`, data),
-  delete: (id) => api.delete(`/permission/${id}`),
-};
-
-export const roleAPI = {
-  getAll: () => api.get('/roles'),
-  getActive: () => api.get('/roles/active'),
-  getById: (id) => api.get(`/roles/${id}`),
-  create: (data) => api.post('/roles', data),
-  update: (id, data) => api.put(`/roles/${id}`, data),
-  enable: (id) => api.put(`/roles/${id}/enable`),
-  disable: (id) => api.put(`/roles/${id}/disable`),
-};
-
-export const faqAPI = {
-  getAll: (page = 1, limit = 10) => api.get(`/faq?page=${page}&limit=${limit}`),
-  getById: (id) => api.get(`/faq/${id}`),
-  create: (data) => api.post('/faq', data),
-  update: (id, data) => api.put(`/faq/${id}`, data),
-  delete: (id, data) => api.delete(`/faq/${id}`, { data }),
-};
-
-export const userAPI = {
-  getAll: (params = {}) => {
-    const queryParams = new URLSearchParams();
-    if (params.page) queryParams.append('page', params.page);
-    if (params.limit) queryParams.append('limit', params.limit);
-    const queryString = queryParams.toString();
-    return api.get(`/users${queryString ? `?${queryString}` : ''}`);
-  },
-  create: (data) => api.post('/users', data),
-  update: (data) => api.put('/users/profile', data),
-  activate: (id) => api.put(`/users/activate/${id}`),
-  deactivate: (id) => api.put(`/users/deactivate/${id}`),
-  manage: (id, data) => api.put(`/users/manage/${id}`, data),
-};
-
-export const transactionAPI = {
-  getAll: (params = {}) => {
-    const queryParams = new URLSearchParams();
-    if (params.page) queryParams.append('page', params.page);
-    if (params.limit) queryParams.append('limit', params.limit);
-    if (params.bookingType) queryParams.append('bookingType', params.bookingType);
-    if (params.status) queryParams.append('status', params.status);
-    if (params.search) queryParams.append('search', params.search);
-    const queryString = queryParams.toString();
-    return api.get(`/transactions${queryString ? `?${queryString}` : ''}`);
-  },
-};
-
+// Export only the axios instance for use in service files
 export default api;
 

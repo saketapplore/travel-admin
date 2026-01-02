@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import CustomTable from '../../../components/CustomTable';
-import { bookingAPI } from '../../../services/api';
+import { bookingService } from '../../../services/bookingService';
 
 // Enums for filters
 const PaymentStatus = {
@@ -90,7 +90,7 @@ const BookingManagement = () => {
     setError('');
     
     try {
-      const response = await bookingAPI.getAll({
+      const response = await bookingService.getAll({
         page: filters.page,
         limit: filters.limit,
         status: filters.status,
@@ -105,6 +105,7 @@ const BookingManagement = () => {
       // Normalize bookings data
       const normalizedBookings = bookingsArray.map(booking => ({
         id: booking._id || booking.id,
+        _id: booking._id || booking.id, // Preserve MongoDB _id separately
         bookingType: booking.bookingType || booking.type || booking.booking_type || 'N/A',
         status: booking.status || booking.bookingStatus || 'pending',
         username: booking.username || booking.user?.username || booking.guest?.username || booking.guestName || booking.user?.name || 'N/A',
@@ -112,7 +113,7 @@ const BookingManagement = () => {
         country: booking.country || booking.user?.country || booking.guest?.country || 'N/A',
         totalAmount: booking.totalAmount || booking.amount || booking.price || 0,
         currency: booking.currency || booking.Currency || booking.bookingDetails?.Currency || booking.bookingDetails?.currency || 'N/A',
-        bookingId: booking.bookingId || booking.booking_id || booking._id || booking.id || 'N/A',
+        bookingId: booking.bookingId || booking.booking_id || 'N/A', // Remove _id fallback to keep it separate
         transactionId: booking.transactionId || booking.transaction_id || booking.transactionId || 'N/A',
         paymentStatus: booking.paymentStatus || booking.payment_status || 'pending',
         traceId: booking.TraceId || booking.traceId || booking.trace_id || booking.bookingDetails?.TraceId || 'N/A',
@@ -300,6 +301,15 @@ const BookingManagement = () => {
       cellClassName: 'text-sm text-gray-500'
     },
     {
+      key: '_id',
+      header: 'MongoDB ID',
+      accessor: '_id',
+      render: (value) => (
+        <span className="font-mono text-xs">{value || 'N/A'}</span>
+      ),
+      cellClassName: 'text-sm text-gray-700'
+    },
+    {
       key: 'bookingId',
       header: 'Booking ID',
       accessor: 'bookingId',
@@ -382,7 +392,7 @@ const BookingManagement = () => {
     setSelectedBooking(null);
     
     try {
-      const response = await bookingAPI.getById(booking.id);
+      const response = await bookingService.getById(booking.id);
       const bookingData = response?.data?.data || response?.data || response;
       setSelectedBooking(bookingData);
     } catch (err) {
@@ -583,7 +593,7 @@ const BookingManagement = () => {
     e.preventDefault();
     try {
       // Update booking via API
-      await bookingAPI.update(editingBooking.id, bookingFormData);
+      await bookingService.update(editingBooking.id, bookingFormData);
       await fetchBookings(); // Refresh list
       setShowBookingModal(false);
       setEditingBooking(null);
@@ -1094,17 +1104,324 @@ const BookingManagement = () => {
                     </div>
                   </div>
 
-                  {/* Booking Details */}
-                  {selectedBooking.bookingDetails && (
-                    <div>
-                      <h4 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">Booking Details</h4>
-                      <div className="bg-gray-50 rounded-lg p-4">
-                        <pre className="text-xs text-gray-700 whitespace-pre-wrap overflow-x-auto">
-                          {JSON.stringify(selectedBooking.bookingDetails, null, 2)}
-                        </pre>
-                      </div>
-                    </div>
-                  )}
+                  {/* Baggage Information */}
+                  {(() => {
+                    const baggage = selectedBooking.baggage || selectedBooking.bookingDetails?.baggage;
+                    if (baggage && (Array.isArray(baggage) ? baggage.length > 0 : Object.keys(baggage).length > 0)) {
+                      const baggageArray = Array.isArray(baggage) ? baggage : [baggage];
+                      return (
+                        <div>
+                          <h4 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">
+                            Baggage Information {baggageArray.length > 1 && `(${baggageArray.length})`}
+                          </h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {baggageArray.map((item, index) => (
+                              <div key={index} className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
+                                <div className="space-y-2">
+                                  {item.type && (
+                                    <div className="flex items-center">
+                                      <span className="text-xs font-semibold text-blue-700 w-24">Type:</span>
+                                      <span className="text-sm text-gray-800 font-medium">{item.type}</span>
+                                    </div>
+                                  )}
+                                  {item.weight && (
+                                    <div className="flex items-center">
+                                      <span className="text-xs font-semibold text-blue-700 w-24">Weight:</span>
+                                      <span className="text-sm text-gray-800">{item.weight}</span>
+                                    </div>
+                                  )}
+                                  {item.quantity && (
+                                    <div className="flex items-center">
+                                      <span className="text-xs font-semibold text-blue-700 w-24">Quantity:</span>
+                                      <span className="text-sm text-gray-800">{item.quantity}</span>
+                                    </div>
+                                  )}
+                                  {item.description && (
+                                    <div className="flex items-start">
+                                      <span className="text-xs font-semibold text-blue-700 w-24">Description:</span>
+                                      <span className="text-sm text-gray-800 flex-1">{item.description}</span>
+                                    </div>
+                                  )}
+                                  {Object.entries(item).filter(([key]) => !['type', 'weight', 'quantity', 'description'].includes(key)).map(([key, value]) => (
+                                    <div key={key} className="flex items-center">
+                                      <span className="text-xs font-semibold text-blue-700 w-24 capitalize">{key.replace(/([A-Z])/g, ' $1')}:</span>
+                                      <span className="text-sm text-gray-800">{typeof value === 'object' ? JSON.stringify(value) : String(value)}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
+
+                  {/* Meal Information */}
+                  {(() => {
+                    const meals = selectedBooking.meal || selectedBooking.bookingDetails?.meal;
+                    if (meals && (Array.isArray(meals) ? meals.length > 0 : meals)) {
+                      const mealsArray = Array.isArray(meals) ? meals : [meals];
+                      return (
+                        <div>
+                          <h4 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">
+                            Meal Information {mealsArray.length > 1 && `(${mealsArray.length})`}
+                          </h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {mealsArray.map((item, index) => (
+                              <div key={index} className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4 border border-green-200">
+                                <div className="space-y-2">
+                                  {item.name && (
+                                    <div className="flex items-center">
+                                      <span className="text-xs font-semibold text-green-700 w-24">Name:</span>
+                                      <span className="text-sm text-gray-800 font-medium">{item.name}</span>
+                                    </div>
+                                  )}
+                                  {item.type && (
+                                    <div className="flex items-center">
+                                      <span className="text-xs font-semibold text-green-700 w-24">Type:</span>
+                                      <span className="text-sm text-gray-800">{item.type}</span>
+                                    </div>
+                                  )}
+                                  {item.code && (
+                                    <div className="flex items-center">
+                                      <span className="text-xs font-semibold text-green-700 w-24">Code:</span>
+                                      <span className="text-sm text-gray-800 font-mono">{item.code}</span>
+                                    </div>
+                                  )}
+                                  {item.description && (
+                                    <div className="flex items-start">
+                                      <span className="text-xs font-semibold text-green-700 w-24">Description:</span>
+                                      <span className="text-sm text-gray-800 flex-1">{item.description}</span>
+                                    </div>
+                                  )}
+                                  {item.price && (
+                                    <div className="flex items-center">
+                                      <span className="text-xs font-semibold text-green-700 w-24">Price:</span>
+                                      <span className="text-sm text-gray-800 font-semibold">{item.price} {item.currency || ''}</span>
+                                    </div>
+                                  )}
+                                  {Object.entries(item).filter(([key]) => !['name', 'type', 'code', 'description', 'price', 'currency'].includes(key)).map(([key, value]) => (
+                                    <div key={key} className="flex items-center">
+                                      <span className="text-xs font-semibold text-green-700 w-24 capitalize">{key.replace(/([A-Z])/g, ' $1')}:</span>
+                                      <span className="text-sm text-gray-800">{typeof value === 'object' ? JSON.stringify(value) : String(value)}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
+
+                  {/* Meal Dynamic Information */}
+                  {(() => {
+                    const mealDynamic = selectedBooking.mealDynamic || selectedBooking.bookingDetails?.mealDynamic;
+                    if (mealDynamic && (Array.isArray(mealDynamic) ? mealDynamic.length > 0 : Object.keys(mealDynamic).length > 0)) {
+                      const mealDynamicArray = Array.isArray(mealDynamic) ? mealDynamic : [mealDynamic];
+                      return (
+                        <div>
+                          <h4 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">
+                            Meal Dynamic Information {mealDynamicArray.length > 1 && `(${mealDynamicArray.length})`}
+                          </h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {mealDynamicArray.map((item, index) => (
+                              <div key={index} className="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-lg p-4 border border-emerald-200">
+                                <div className="space-y-2">
+                                  {Object.entries(item).map(([key, value]) => (
+                                    <div key={key} className="flex items-start">
+                                      <span className="text-xs font-semibold text-emerald-700 w-32 capitalize">{key.replace(/([A-Z])/g, ' $1')}:</span>
+                                      <span className="text-sm text-gray-800 flex-1">
+                                        {typeof value === 'object' && value !== null ? (
+                                          <div className="bg-white rounded p-2 text-xs">
+                                            {JSON.stringify(value, null, 2)}
+                                          </div>
+                                        ) : (
+                                          String(value || 'N/A')
+                                        )}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
+
+                  {/* Seat Information */}
+                  {(() => {
+                    const seats = selectedBooking.seat || selectedBooking.bookingDetails?.seat;
+                    if (seats && (Array.isArray(seats) ? seats.length > 0 : seats)) {
+                      const seatsArray = Array.isArray(seats) ? seats : [seats];
+                      return (
+                        <div>
+                          <h4 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">
+                            Seat Information {seatsArray.length > 1 && `(${seatsArray.length})`}
+                          </h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {seatsArray.map((item, index) => (
+                              <div key={index} className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-4 border border-purple-200">
+                                <div className="space-y-2">
+                                  {item.seatNumber && (
+                                    <div className="flex items-center">
+                                      <span className="text-xs font-semibold text-purple-700 w-24">Seat Number:</span>
+                                      <span className="text-sm text-gray-800 font-medium font-mono">{item.seatNumber}</span>
+                                    </div>
+                                  )}
+                                  {item.seatType && (
+                                    <div className="flex items-center">
+                                      <span className="text-xs font-semibold text-purple-700 w-24">Seat Type:</span>
+                                      <span className="text-sm text-gray-800">{item.seatType}</span>
+                                    </div>
+                                  )}
+                                  {item.row && (
+                                    <div className="flex items-center">
+                                      <span className="text-xs font-semibold text-purple-700 w-24">Row:</span>
+                                      <span className="text-sm text-gray-800">{item.row}</span>
+                                    </div>
+                                  )}
+                                  {item.column && (
+                                    <div className="flex items-center">
+                                      <span className="text-xs font-semibold text-purple-700 w-24">Column:</span>
+                                      <span className="text-sm text-gray-800">{item.column}</span>
+                                    </div>
+                                  )}
+                                  {item.price && (
+                                    <div className="flex items-center">
+                                      <span className="text-xs font-semibold text-purple-700 w-24">Price:</span>
+                                      <span className="text-sm text-gray-800 font-semibold">{item.price} {item.currency || ''}</span>
+                                    </div>
+                                  )}
+                                  {Object.entries(item).filter(([key]) => !['seatNumber', 'seatType', 'row', 'column', 'price', 'currency'].includes(key)).map(([key, value]) => (
+                                    <div key={key} className="flex items-center">
+                                      <span className="text-xs font-semibold text-purple-700 w-24 capitalize">{key.replace(/([A-Z])/g, ' $1')}:</span>
+                                      <span className="text-sm text-gray-800">{typeof value === 'object' ? JSON.stringify(value) : String(value)}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
+
+                  {/* Seat Dynamic Information */}
+                  {(() => {
+                    const seatDynamic = selectedBooking.seatDynamic || selectedBooking.bookingDetails?.seatDynamic;
+                    if (seatDynamic && (Array.isArray(seatDynamic) ? seatDynamic.length > 0 : Object.keys(seatDynamic).length > 0)) {
+                      const seatDynamicArray = Array.isArray(seatDynamic) ? seatDynamic : [seatDynamic];
+                      return (
+                        <div>
+                          <h4 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">
+                            Seat Dynamic Information {seatDynamicArray.length > 1 && `(${seatDynamicArray.length})`}
+                          </h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {seatDynamicArray.map((item, index) => (
+                              <div key={index} className="bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-lg p-4 border border-indigo-200">
+                                <div className="space-y-2">
+                                  {Object.entries(item).map(([key, value]) => (
+                                    <div key={key} className="flex items-start">
+                                      <span className="text-xs font-semibold text-indigo-700 w-32 capitalize">{key.replace(/([A-Z])/g, ' $1')}:</span>
+                                      <span className="text-sm text-gray-800 flex-1">
+                                        {typeof value === 'object' && value !== null ? (
+                                          <div className="bg-white rounded p-2 text-xs">
+                                            {JSON.stringify(value, null, 2)}
+                                          </div>
+                                        ) : (
+                                          String(value || 'N/A')
+                                        )}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
+
+                  {/* Special Services Information */}
+                  {(() => {
+                    const specialServices = selectedBooking.specialServices || selectedBooking.bookingDetails?.specialServices || 
+                                           selectedBooking.specialService || selectedBooking.bookingDetails?.specialService;
+                    if (specialServices && (Array.isArray(specialServices) ? specialServices.length > 0 : Object.keys(specialServices).length > 0)) {
+                      const servicesArray = Array.isArray(specialServices) ? specialServices : [specialServices];
+                      return (
+                        <div>
+                          <h4 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">
+                            Special Services {servicesArray.length > 1 && `(${servicesArray.length})`}
+                          </h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {servicesArray.map((item, index) => (
+                              <div key={index} className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-4 border border-orange-200">
+                                <div className="space-y-2">
+                                  {item.name && (
+                                    <div className="flex items-center">
+                                      <span className="text-xs font-semibold text-orange-700 w-24">Name:</span>
+                                      <span className="text-sm text-gray-800 font-medium">{item.name}</span>
+                                    </div>
+                                  )}
+                                  {item.type && (
+                                    <div className="flex items-center">
+                                      <span className="text-xs font-semibold text-orange-700 w-24">Type:</span>
+                                      <span className="text-sm text-gray-800">{item.type}</span>
+                                    </div>
+                                  )}
+                                  {item.code && (
+                                    <div className="flex items-center">
+                                      <span className="text-xs font-semibold text-orange-700 w-24">Code:</span>
+                                      <span className="text-sm text-gray-800 font-mono">{item.code}</span>
+                                    </div>
+                                  )}
+                                  {item.description && (
+                                    <div className="flex items-start">
+                                      <span className="text-xs font-semibold text-orange-700 w-24">Description:</span>
+                                      <span className="text-sm text-gray-800 flex-1">{item.description}</span>
+                                    </div>
+                                  )}
+                                  {item.price && (
+                                    <div className="flex items-center">
+                                      <span className="text-xs font-semibold text-orange-700 w-24">Price:</span>
+                                      <span className="text-sm text-gray-800 font-semibold">{item.price} {item.currency || ''}</span>
+                                    </div>
+                                  )}
+                                  {Object.entries(item).filter(([key]) => !['name', 'type', 'code', 'description', 'price', 'currency'].includes(key)).map(([key, value]) => (
+                                    <div key={key} className="flex items-start">
+                                      <span className="text-xs font-semibold text-orange-700 w-24 capitalize">{key.replace(/([A-Z])/g, ' $1')}:</span>
+                                      <span className="text-sm text-gray-800 flex-1">
+                                        {typeof value === 'object' && value !== null ? (
+                                          <div className="bg-white rounded p-2 text-xs">
+                                            {JSON.stringify(value, null, 2)}
+                                          </div>
+                                        ) : (
+                                          String(value || 'N/A')
+                                        )}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
 
                   {/* Flight Details */}
                   {selectedBooking.bookingDetails?.flightDetails && (
@@ -1168,28 +1485,87 @@ const BookingManagement = () => {
                     </div>
                   )}
 
-                  {/* Timestamps */}
-                  <div>
-                    <h4 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">Timestamps</h4>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Created At</label>
-                        <p className="text-sm text-gray-900">
-                          {selectedBooking.createdAt 
-                            ? new Date(selectedBooking.createdAt).toLocaleString()
-                            : 'N/A'}
-                        </p>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Updated At</label>
-                        <p className="text-sm text-gray-900">
-                          {selectedBooking.updatedAt 
-                            ? new Date(selectedBooking.updatedAt).toLocaleString()
-                            : 'N/A'}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+                  {/* Passenger Data */}
+                  {(() => {
+                    const passengerData = selectedBooking.passengers || selectedBooking.passengerData || selectedBooking.passenger || 
+                                         selectedBooking.bookingDetails?.passengers || selectedBooking.bookingDetails?.passengerData ||
+                                         selectedBooking.bookingDetails?.passenger;
+                    if (passengerData) {
+                      return (
+                        <div>
+                          <h4 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">
+                            Passenger Information
+                            {Array.isArray(passengerData) && ` (${passengerData.length})`}
+                          </h4>
+                          {(() => {
+                            const passengers = Array.isArray(passengerData) ? passengerData : [passengerData];
+                            if (passengers.length > 0) {
+                              // Get all unique keys from all passengers to build comprehensive table
+                              const allKeys = new Set();
+                              passengers.forEach(p => {
+                                if (p && typeof p === 'object') {
+                                  Object.keys(p).forEach(key => allKeys.add(key));
+                                }
+                              });
+                              
+                              // Standard fields to show in order
+                              const standardFields = ['name', 'fullName', 'firstName', 'lastName', 'email', 'phone', 'phoneNumber', 'mobile', 
+                                                      'age', 'dateOfBirth', 'gender', 'passportNumber', 'passport', 'idNumber', 'id', 
+                                                      'nationality', 'country', 'seatNumber', 'seat', 'type', 'passengerType'];
+                              const orderedFields = [...standardFields.filter(f => allKeys.has(f)), 
+                                                    ...Array.from(allKeys).filter(f => !standardFields.includes(f))];
+                              
+                              return (
+                                <div className="overflow-x-auto">
+                                  <table className="w-full border-collapse">
+                                    <thead>
+                                      <tr className="bg-gray-50 border-b">
+                                        {orderedFields.map(field => (
+                                          <th key={field} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            {field.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
+                                          </th>
+                                        ))}
+                                      </tr>
+                                    </thead>
+                                    <tbody className="bg-white divide-y divide-gray-200">
+                                      {passengers.map((passenger, index) => (
+                                        <tr key={index} className="hover:bg-gray-50">
+                                          {orderedFields.map(field => {
+                                            let value = passenger[field];
+                                            // Handle special cases
+                                            if (field === 'name' && !value) {
+                                              value = passenger.fullName || 
+                                                     (passenger.firstName ? `${passenger.firstName} ${passenger.lastName || ''}`.trim() : null);
+                                            }
+                                            if (field === 'dateOfBirth' && value) {
+                                              value = new Date(value).toLocaleDateString();
+                                            }
+                                            if (value === null || value === undefined) {
+                                              value = 'N/A';
+                                            }
+                                            if (typeof value === 'object') {
+                                              value = JSON.stringify(value);
+                                            }
+                                            return (
+                                              <td key={field} className="px-4 py-3 text-sm text-gray-500">
+                                                {value}
+                                              </td>
+                                            );
+                                          })}
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              );
+                            }
+                            return <p className="text-sm text-gray-500 text-center py-4">No passenger data available</p>;
+                          })()}
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
                 </div>
               ) : (
                 <div className="text-center py-8 text-gray-500">No booking details available</div>

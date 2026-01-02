@@ -3,7 +3,6 @@ import React from 'react';
 const Sidebar = ({ activeSection, setActiveSection }) => {
   const menuItems = [
     { id: 'properties', label: 'Property Management', icon: '🏢' },
-    { id: 'admins', label: 'Admin Accounts', icon: '👥' },
     { id: 'users', label: 'Admin Users', icon: '👤' },
     { id: 'roles', label: 'Roles & Permissions', icon: '🔐' },
     { id: 'bookings', label: 'Booking Management', icon: '📅' },

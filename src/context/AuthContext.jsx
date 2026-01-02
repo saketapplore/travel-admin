@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { authAPI } from '../services/api';
+import { authService } from '../services/authService';
 
 const AuthContext = createContext(null);
 
@@ -43,7 +43,7 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       // Use API authentication only
-      const response = await authAPI.login({
+      const response = await authService.login({
         email: email.trim(),
         password: password
       });
@@ -195,7 +195,7 @@ export const AuthProvider = ({ children }) => {
 
   const refreshUser = async () => {
     try {
-      const response = await authAPI.getCurrentUser();
+      const response = await authService.getCurrentUser();
       const data = response.data;
 
       if (data && response.status === 200) {

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { userAPI } from '../services/api';
+import { userService } from '../services/userService';
 
 const DashboardLayout = ({ children }) => {
   const { user, logout, refreshUser } = useAuth();
@@ -65,7 +65,7 @@ const DashboardLayout = ({ children }) => {
     }
 
     try {
-      const response = await userAPI.update({ name: name.trim() });
+      const response = await userService.update({ name: name.trim() });
       console.log('Profile update response:', response);
 
       // Refresh user data to get updated information

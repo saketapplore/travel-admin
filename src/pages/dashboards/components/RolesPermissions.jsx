@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { permissionAPI, roleAPI } from '../../../services/api';
+import { permissionService } from '../../../services/permissionService';
+import { roleService } from '../../../services/roleService';
 import { EditIcon } from '../../../components/icons';
 
 const RolesPermissions = () => {
@@ -43,7 +44,7 @@ const RolesPermissions = () => {
       setRolesError('');
       
       try {
-        const response = await roleAPI.getAll();
+        const response = await roleService.getAll();
         // Handle various response structures
         const data = response?.data?.data || response?.data || [];
         const rolesArray = Array.isArray(data) ? data : [];
@@ -135,7 +136,7 @@ const RolesPermissions = () => {
       setPermissionsError('');
       
       try {
-        const response = await permissionAPI.getAll();
+        const response = await permissionService.getAll();
         // Handle various response structures
         const data = response?.data?.data || response?.data || [];
         const permissionsArray = Array.isArray(data) ? data : [];
@@ -203,7 +204,7 @@ const RolesPermissions = () => {
     const fetchPermissionsForModal = async () => {
       if (showRoleModal && availablePermissions.length === 0) {
         try {
-          const response = await permissionAPI.getAll();
+          const response = await permissionService.getAll();
           const data = response?.data?.data || response?.data || [];
           const permissionsArray = Array.isArray(data) ? data : [];
           
@@ -271,11 +272,11 @@ const RolesPermissions = () => {
     );
 
     try {
-      const enableResponse = await roleAPI.enable(id);
+      const enableResponse = await roleService.enable(id);
       console.log('Enable API response:', enableResponse);
       
       // Refresh roles list to get latest data
-      const response = await roleAPI.getAll();
+      const response = await roleService.getAll();
       const data = response?.data?.data || response?.data || [];
       const rolesArray = Array.isArray(data) ? data : [];
       
@@ -361,7 +362,7 @@ const RolesPermissions = () => {
       } else {
         // If we don't have the role, refresh from API
         try {
-          const response = await roleAPI.getAll();
+          const response = await roleService.getAll();
           const data = response?.data?.data || response?.data || [];
           const rolesArray = Array.isArray(data) ? data : [];
           setRolesData(rolesArray);
@@ -396,11 +397,11 @@ const RolesPermissions = () => {
     );
 
     try {
-      const disableResponse = await roleAPI.disable(id);
+      const disableResponse = await roleService.disable(id);
       console.log('Disable API response:', disableResponse);
       
       // Refresh roles list to get latest data
-      const response = await roleAPI.getAll();
+      const response = await roleService.getAll();
       const data = response?.data?.data || response?.data || [];
       const rolesArray = Array.isArray(data) ? data : [];
       
@@ -486,7 +487,7 @@ const RolesPermissions = () => {
       } else {
         // If we don't have the role, refresh from API
         try {
-          const response = await roleAPI.getAll();
+          const response = await roleService.getAll();
           const data = response?.data?.data || response?.data || [];
           const rolesArray = Array.isArray(data) ? data : [];
           setRolesData(rolesArray);
@@ -549,14 +550,14 @@ const RolesPermissions = () => {
       if (editingRole) {
         // Update role
         const roleId = editingRole._id || editingRole.id;
-        await roleAPI.update(roleId, {
+        await roleService.update(roleId, {
           name: roleForm.name.trim(),
           description: roleForm.description.trim(),
           permissions: permissionsPayload,
         });
       } else {
         // Create role
-        await roleAPI.create({
+        await roleService.create({
           name: roleForm.name.trim(),
           description: roleForm.description.trim(),
           permissions: permissionsPayload,
@@ -564,7 +565,7 @@ const RolesPermissions = () => {
       }
       
       // Refresh roles list
-      const response = await roleAPI.getAll();
+      const response = await roleService.getAll();
       const data = response?.data?.data || response?.data || [];
       setRolesData(Array.isArray(data) ? data : []);
       

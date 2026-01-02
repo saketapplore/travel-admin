@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import CustomTable from '../../../components/CustomTable';
-import { transactionAPI } from '../../../services/api';
+import { transactionService } from '../../../services/transactionService';
 
 const FinancialManagement = () => {
   const [transactions, setTransactions] = useState([]);
@@ -33,7 +33,7 @@ const FinancialManagement = () => {
     setError('');
 
     try {
-      const response = await transactionAPI.getAll({
+      const response = await transactionService.getAll({
         page: filters.page,
         limit: filters.limit,
         bookingType: filters.bookingType || undefined,
