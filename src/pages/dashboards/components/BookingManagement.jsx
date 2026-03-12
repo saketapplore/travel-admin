@@ -290,7 +290,7 @@ const BookingManagement = () => {
       key: 'totalAmount',
       header: 'Total Amount',
       accessor: 'totalAmount',
-      render: (value) => value || 0,
+      render: (value) => value.toFixed(2) || 0,
       cellClassName: 'text-sm text-gray-700 font-medium'
     },
     {
