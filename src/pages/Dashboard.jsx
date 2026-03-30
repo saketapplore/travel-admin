@@ -38,7 +38,7 @@ const Dashboard = () => {
       // Default to super-admin if no roleKey
       roleKey = 'super-admin';
     }
-    
+
     switch (roleKey) {
       case 'super-admin':
       case 'superadmin':
@@ -60,13 +60,7 @@ const Dashboard = () => {
     }
   };
 
-  return (
-    <DashboardLayout>
-      {renderDashboard()}
-    </DashboardLayout>
-  );
+  return <DashboardLayout>{renderDashboard()}</DashboardLayout>;
 };
 
 export default Dashboard;
-
-

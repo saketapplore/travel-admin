@@ -1,20 +1,39 @@
-# Travel Admin Panel
+# Travel Rumours Admin Panel
 
-A modern, role-based admin panel for managing travel properties, bookings, and staff.
+A modern, role-based admin panel for managing travel properties, bookings, and staff. This project has been refactored to meet production-ready standards for maintenance and scalability.
 
-## Features
+## 🚀 Key Features
 
-- **Role-Based Access Control** with 4 different admin roles:
-  - Super Admin
-  - Property Manager
-  - Booking Manager
-  - Staff Manager
+- **Role-Based Access Control (RBAC)**: Fine-grained permissions for Super Admin, Property Manager, Booking Manager, and Staff Manager.
+- **Modular Architecture**: Monolithic components broken into specialized sub-modules with custom hooks.
+- **Production Infrastructure**: Built-in linting, formatting, and unit testing suite.
+- **Premium UI**: Consistent, high-end design using solid themes and optimized React components.
+- **Automated Invoices**: On-the-fly invoice generation for all bookings.
 
-- **Modern UI** built with React, Vite, and Tailwind CSS
-- **Secure Authentication** with hardcoded credentials for demo
-- **Responsive Design** that works on all devices
+## 🛠️ Tech Stack
 
-## Getting Started
+- **Core**: React 18, Vite 5, Tailwind CSS
+- **Routing**: React Router 6
+- **State**: Context API + Custom Hooks
+- **Quality**: ESLint 9, Prettier, Vitest, JSDOM
+
+## 📂 Project Structure
+
+```text
+src/
+├── components/         # Shared UI components
+├── constants/          # Application-wide enums
+├── hooks/              # Reusable business logic
+├── pages/
+│   └── dashboards/
+│       └── components/ # Refactored sub-modules (BookingManagement, AdminUsers, etc.)
+├── services/           # API communication layer
+└── utils/              # Helper functions (Formatters, Invoice Generator)
+```
+
+For detailed architecture info, see [Architecture Overview](./architecture_overview.md).
+
+## 🏁 Getting Started
 
 ### Installation
 
@@ -22,76 +41,35 @@ A modern, role-based admin panel for managing travel properties, bookings, and s
 npm install
 ```
 
-### Running the Application
+### Running for Development
 
 ```bash
 npm run dev
 ```
 
-The application will be available at `http://localhost:5173`
+### Quality Assurance
 
-## Login Credentials
+```bash
+# Lint code
+npm run lint
+
+# Format code
+npm run format
+
+# Run tests
+npm run test:run
+```
+
+## 🔐 Login Credentials
 
 ### Super Admin (API Authentication)
 - **API Endpoint**: `https://travel-rumours-api.applore.in/`
-- **Method**: POST
 - **Email**: `ayush.rajput@applore.in`
 - **Password**: `Applore@123`
 
-The login system authenticates via API. If API authentication succeeds, user is logged in as Super Admin with full permissions.
-
-### Creating Other Accounts
-
-The Super Admin can create accounts for:
-- **Property Manager** - Can manage property details, availability, and bookings assigned to them
-- **Booking Manager** - Can view and manage booking requests, confirmations, cancellations, and payments
-- **Staff Manager** - Can onboard staff members, assign bookings, and manage staff roles
-
-To create accounts:
-1. Login as Super Admin using API credentials
-2. Go to "Admin Accounts" section
-3. Click "+ Create New Account"
-4. Enter name, email, password, and select role
-5. The account will be created and can be used to login (stored locally)
-
-## Technologies Used
-
-- **React** - UI library
-- **Vite** - Build tool
-- **Tailwind CSS** - Styling
-- **React Router** - Navigation
-- **Context API** - State management
-
-## Project Structure
-
-```
-src/
-├── components/
-│   ├── DashboardLayout.jsx
-│   └── ProtectedRoute.jsx
-├── context/
-│   └── AuthContext.jsx
-├── pages/
-│   ├── Login.jsx
-│   ├── Dashboard.jsx
-│   └── dashboards/
-│       ├── SuperAdminDashboard.jsx
-│       ├── PropertyManagerDashboard.jsx
-│       ├── BookingManagerDashboard.jsx
-│       └── StaffManagerDashboard.jsx
-├── App.jsx
-└── main.jsx
-```
-
-## Build for Production
+## 🏗️ Building for Production
 
 ```bash
 npm run build
-```
-
-## Preview Production Build
-
-```bash
 npm run preview
 ```
-

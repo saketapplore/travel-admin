@@ -16,10 +16,10 @@ export const bookingService = {
     return api.get(`/bookings${queryString ? `?${queryString}` : ''}`);
   },
   getById: (id) => api.get(`/bookings/${id}`),
+  getUserDocuments: (userId) => api.get(`/bookings/user/${userId}/documents`),
   create: (data) => api.post('/bookings', data),
   update: (id, data) => api.put(`/bookings/${id}`, data),
-  delete: (id) => api.delete(`/bookings/${id}`),
+  delete: (id) => api.delete(`/bookings/${id}`)
 };
 
 export default bookingService;
-

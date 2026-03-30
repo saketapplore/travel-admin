@@ -1,6 +1,6 @@
 import React from 'react';
 
-const EnableIcon = ({ className = "w-5 h-5", ...props }) => {
+const EnableIcon = ({ className = 'w-5 h-5', ...props }) => {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -21,4 +21,3 @@ const EnableIcon = ({ className = "w-5 h-5", ...props }) => {
 };
 
 export default EnableIcon;
-

@@ -9,8 +9,7 @@ export const faqService = {
   getById: (id) => api.get(`/faq/${id}`),
   create: (data) => api.post('/faq', data),
   update: (id, data) => api.put(`/faq/${id}`, data),
-  delete: (id, data) => api.delete(`/faq/${id}`, { data }),
+  delete: (id, data) => api.delete(`/faq/${id}`, { data })
 };
 
 export default faqService;
-

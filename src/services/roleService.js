@@ -12,7 +12,7 @@ export const roleService = {
   update: (id, data) => api.put(`/roles/${id}`, data),
   enable: (id) => api.put(`/roles/${id}/enable`),
   disable: (id) => api.put(`/roles/${id}/disable`),
+  delete: (id) => api.delete(`/roles/${id}`)
 };
 
 export default roleService;
-

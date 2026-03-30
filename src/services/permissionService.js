@@ -9,8 +9,7 @@ export const permissionService = {
   getById: (id) => api.get(`/permission/${id}`),
   create: (data) => api.post('/permission', data),
   update: (id, data) => api.put(`/permission/${id}`, data),
-  delete: (id) => api.delete(`/permission/${id}`),
+  delete: (id) => api.delete(`/permission/${id}`)
 };
 
 export default permissionService;
-

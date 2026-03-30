@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import CustomTable from '../../components/CustomTable';
 import { ViewIcon } from '../../components/icons';
+import { Calendar, CheckCircle2, Clock, CircleDollarSign } from 'lucide-react';
 
 const BookingManagerDashboard = () => {
   const [bookings, setBookings] = useState([
@@ -104,7 +105,6 @@ const BookingManagerDashboard = () => {
     setShowModal(true);
   };
 
-
   const getBookingStatusColor = (status) => {
     switch (status) {
       case 'Approved':
@@ -170,7 +170,9 @@ const BookingManagerDashboard = () => {
       header: 'Payment Status',
       accessor: 'paymentStatus',
       render: (value) => (
-        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getPaymentStatusColor(value)}`}>
+        <span
+          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getPaymentStatusColor(value)}`}
+        >
           {value}
         </span>
       )
@@ -180,7 +182,9 @@ const BookingManagerDashboard = () => {
       header: 'Booking Status',
       accessor: 'bookingStatus',
       render: (value) => (
-        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getBookingStatusColor(value)}`}>
+        <span
+          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getBookingStatusColor(value)}`}
+        >
           {value}
         </span>
       )
@@ -209,7 +213,9 @@ const BookingManagerDashboard = () => {
     <div>
       <div className="mb-8">
         <h2 className="text-3xl font-bold text-gray-800 mb-2">Booking Manager Dashboard</h2>
-        <p className="text-gray-600">View and manage booking requests, confirmations, cancellations, and payments</p>
+        <p className="text-gray-600">
+          View and manage booking requests, confirmations, cancellations, and payments
+        </p>
       </div>
 
       {/* Statistics Cards */}
@@ -220,7 +226,9 @@ const BookingManagerDashboard = () => {
               <p className="text-gray-500 text-sm">Total Bookings</p>
               <p className="text-3xl font-bold text-gray-800">{bookings.length}</p>
             </div>
-            <div className="text-4xl">📅</div>
+            <div className="p-3 bg-blue-50 rounded-lg">
+              <Calendar className="w-8 h-8 text-blue-600" />
+            </div>
           </div>
         </div>
         <div className="bg-white rounded-lg shadow-md p-6">
@@ -228,10 +236,12 @@ const BookingManagerDashboard = () => {
             <div>
               <p className="text-gray-500 text-sm">Confirmed</p>
               <p className="text-3xl font-bold text-green-600">
-                {bookings.filter(b => b.bookingStatus === 'Approved').length}
+                {bookings.filter((b) => b.bookingStatus === 'Approved').length}
               </p>
             </div>
-            <div className="text-4xl">✅</div>
+            <div className="p-3 bg-green-50 rounded-lg">
+              <CheckCircle2 className="w-8 h-8 text-green-600" />
+            </div>
           </div>
         </div>
         <div className="bg-white rounded-lg shadow-md p-6">
@@ -239,10 +249,12 @@ const BookingManagerDashboard = () => {
             <div>
               <p className="text-gray-500 text-sm">Pending</p>
               <p className="text-3xl font-bold text-yellow-600">
-                {bookings.filter(b => b.bookingStatus === 'Pending').length}
+                {bookings.filter((b) => b.bookingStatus === 'Pending').length}
               </p>
             </div>
-            <div className="text-4xl">⏳</div>
+            <div className="p-3 bg-yellow-50 rounded-lg">
+              <Clock className="w-8 h-8 text-yellow-600" />
+            </div>
           </div>
         </div>
         <div className="bg-white rounded-lg shadow-md p-6">
@@ -251,7 +263,9 @@ const BookingManagerDashboard = () => {
               <p className="text-gray-500 text-sm">Revenue</p>
               <p className="text-3xl font-bold text-blue-600">$5.8K</p>
             </div>
-            <div className="text-4xl">💰</div>
+            <div className="p-3 bg-indigo-50 rounded-lg">
+              <CircleDollarSign className="w-8 h-8 text-indigo-600" />
+            </div>
           </div>
         </div>
       </div>
@@ -270,18 +284,16 @@ const BookingManagerDashboard = () => {
           </div>
         </div>
 
-        <CustomTable
-          columns={columns}
-          data={bookings}
-          emptyMessage="No bookings found."
-        />
+        <CustomTable columns={columns} data={bookings} emptyMessage="No bookings found." />
       </div>
 
       {/* Modal */}
       {showModal && selectedBooking && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto py-4">
           <div className="bg-white rounded-lg p-8 max-w-2xl w-full mx-4 my-8 max-h-[90vh] flex flex-col">
-            <h3 className="text-2xl font-bold mb-6 flex-shrink-0">Booking Details - {selectedBooking.guestName}</h3>
+            <h3 className="text-2xl font-bold mb-6 flex-shrink-0">
+              Booking Details - {selectedBooking.guestName}
+            </h3>
             <div className="flex-1 overflow-y-auto pr-2 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -322,13 +334,17 @@ const BookingManagerDashboard = () => {
                 </div>
                 <div>
                   <p className="font-semibold text-gray-700 mb-1">Payment Status:</p>
-                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getPaymentStatusColor(selectedBooking.paymentStatus)}`}>
+                  <span
+                    className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getPaymentStatusColor(selectedBooking.paymentStatus)}`}
+                  >
                     {selectedBooking.paymentStatus}
                   </span>
                 </div>
                 <div>
                   <p className="font-semibold text-gray-700 mb-1">Booking Status:</p>
-                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getBookingStatusColor(selectedBooking.bookingStatus)}`}>
+                  <span
+                    className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getBookingStatusColor(selectedBooking.bookingStatus)}`}
+                  >
                     {selectedBooking.bookingStatus}
                   </span>
                 </div>
@@ -374,5 +390,3 @@ const BookingManagerDashboard = () => {
 };
 
 export default BookingManagerDashboard;
-
-

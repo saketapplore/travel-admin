@@ -7,8 +7,7 @@ import api from './api';
 export const authService = {
   login: (credentials) => api.post('/login', credentials),
   logout: () => api.post('/logout'),
-  getCurrentUser: () => api.get('/me'),
+  getCurrentUser: () => api.get('/me')
 };
 
 export default authService;
-

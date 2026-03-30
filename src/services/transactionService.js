@@ -15,8 +15,7 @@ export const transactionService = {
     const queryString = queryParams.toString();
     return api.get(`/transactions${queryString ? `?${queryString}` : ''}`);
   },
-  getById: (id) => api.get(`/transactions/${id}`),
+  getById: (id) => api.get(`/transactions/${id}`)
 };
 
 export default transactionService;
-

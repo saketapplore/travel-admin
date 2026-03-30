@@ -16,8 +16,7 @@ export const activityLogService = {
     const queryString = queryParams.toString();
     return api.get(`/activity-logs${queryString ? `?${queryString}` : ''}`);
   },
-  getById: (id) => api.get(`/activity-logs/${id}`),
+  getById: (id) => api.get(`/activity-logs/${id}`)
 };
 
 export default activityLogService;
-

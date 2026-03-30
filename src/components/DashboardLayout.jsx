@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { userService } from '../services/userService';
+import { UserCircle, LogOut } from 'lucide-react';
+import logo from '../assets/logo.png';
 
 const DashboardLayout = ({ children }) => {
   const { user, logout, refreshUser } = useAuth();
@@ -12,6 +14,18 @@ const DashboardLayout = ({ children }) => {
   const [updating, setUpdating] = useState(false);
   const [error, setError] = useState('');
   const dropdownRef = useRef(null);
+
+  const isSuperAdminOrAdmin = () => {
+    let roleKey = user?.roleKey;
+    if (roleKey && typeof roleKey === 'string') {
+      roleKey = roleKey.toLowerCase().trim();
+    } else if (roleKey) {
+      roleKey = String(roleKey).toLowerCase().trim();
+    } else {
+      roleKey = 'super-admin';
+    }
+    return roleKey === 'super-admin' || roleKey === 'superadmin' || roleKey === 'admin';
+  };
 
   // Get first character of user's name or email
   const getInitial = () => {
@@ -90,14 +104,29 @@ const DashboardLayout = ({ children }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div 
+      className="min-h-screen bg-cover bg-center bg-no-repeat bg-fixed relative"
+      style={{ backgroundImage: "url('/src/assets/image.png')" }}
+    >
+      {/* Light Overlay to ensure readability */}
+      <div className="absolute inset-0 bg-white/40 pointer-events-none"></div>
+
       {/* Header - Fixed at top */}
-      <header className="fixed top-0 left-0 right-0 bg-orange-500 text-white shadow-lg z-50">
+      <header className="fixed top-0 left-0 right-0 bg-orange-500/90 backdrop-blur-md text-white shadow-lg z-50">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold">ADMIN PANEL</h1>
-              <p className="text-orange-100 text-sm">Travel Rumors Management</p>
+            <div className="flex items-center gap-4">
+              <img
+                src={logo}
+                alt="Logo"
+                className="w-12 h-12 object-contain bg-white/20 p-1.5 rounded-xl shadow-inner border border-white/10"
+              />
+              <div>
+                <h1 className="text-2xl font-bold tracking-tight leading-none mb-1">ADMIN PANEL</h1>
+                <p className="text-white/80 text-xs font-medium uppercase tracking-wider">
+                  Travel Rumours
+                </p>
+              </div>
             </div>
             <div className="flex items-center space-x-4">
               <div className="text-right">
@@ -113,24 +142,31 @@ const DashboardLayout = ({ children }) => {
                 >
                   {getInitial()}
                 </button>
-                
+
                 {/* Dropdown Menu */}
                 {showDropdown && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-50">
+                  <div className="absolute right-0 mt-3 w-56 bg-white rounded-2xl shadow-2xl border border-gray-200 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="px-4 py-2 border-b border-gray-100 mb-1">
+                      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                        Account
+                      </p>
+                    </div>
                     <button
                       onClick={handleEditProfile}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition duration-150 flex items-center"
+                      className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition duration-150 flex items-center gap-3"
                     >
-                      <span className="mr-2">✏️</span>
-                      Edit Profile
+                      <UserCircle className="w-5 h-5 opacity-70" />
+                      <span className="font-medium">Edit Profile</span>
                     </button>
-                    <button
-                      onClick={handleLogout}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition duration-150 flex items-center"
-                    >
-                      <span className="mr-2">🚪</span>
-                      Logout
-                    </button>
+                    {!isSuperAdminOrAdmin() && (
+                      <button
+                        onClick={handleLogout}
+                        className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition duration-150 flex items-center gap-3 border-t border-gray-50"
+                      >
+                        <LogOut className="w-5 h-5 opacity-70" />
+                        <span className="font-medium">Logout</span>
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -140,9 +176,7 @@ const DashboardLayout = ({ children }) => {
       </header>
 
       {/* Main Content - Add padding-top to account for fixed header */}
-      <main className="container mx-auto px-6 py-8 pt-24">
-        {children}
-      </main>
+      <main className="w-full px-6 pb-8 pt-24">{children}</main>
 
       {/* Edit Profile Modal */}
       {showEditProfileModal && (
@@ -169,9 +203,7 @@ const DashboardLayout = ({ children }) => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Email
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
                   <input
                     type="email"
                     value={user?.email || ''}
@@ -216,4 +248,3 @@ const DashboardLayout = ({ children }) => {
 };
 
 export default DashboardLayout;
-

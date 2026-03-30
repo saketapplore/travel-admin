@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { EditIcon, DeleteIcon } from '../../../components/icons';
+import { EditIcon, DeleteIcon } from '@/components/icons';
+import { Ticket, Package } from 'lucide-react';
 
 const DiscountsPackages = () => {
   const [discountsSubSection, setDiscountsSubSection] = useState('discounts');
+
   
   const [discounts, setDiscounts] = useState([
     {
@@ -206,23 +208,25 @@ const DiscountsPackages = () => {
           <div className="flex space-x-4 mb-4">
             <button
               onClick={() => setDiscountsSubSection('discounts')}
-              className={`px-6 py-2 rounded-lg font-semibold transition duration-200 ${
+              className={`px-6 py-2.5 rounded-xl font-bold transition-all duration-300 flex items-center gap-2.5 ${
                 discountsSubSection === 'discounts'
                   ? 'bg-orange-500 text-white shadow-md'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-orange-600'
               }`}
             >
-              🎫 Discount Codes
+              <Ticket className="w-5 h-5" />
+              <span>Discount Codes</span>
             </button>
             <button
               onClick={() => setDiscountsSubSection('packages')}
-              className={`px-6 py-2 rounded-lg font-semibold transition duration-200 ${
+              className={`px-6 py-2.5 rounded-xl font-bold transition-all duration-300 flex items-center gap-2.5 ${
                 discountsSubSection === 'packages'
                   ? 'bg-orange-500 text-white shadow-md'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-orange-600'
               }`}
             >
-              📦 Packages
+              <Package className="w-5 h-5" />
+              <span>Packages</span>
             </button>
           </div>
         </div>

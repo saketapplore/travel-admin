@@ -1,6 +1,6 @@
 # API Service Documentation
 
-This folder contains the API service layer for the Travel Rumors Admin Panel.
+This folder contains the API service layer for the Travel Rumours Admin Panel.
 
 ## Structure
 
@@ -13,12 +13,15 @@ src/services/
 ## API Configuration
 
 ### Base URL
+
 ```
 https://travel-rumours-api.applore.in/api/admin
 ```
 
 ### Axios Instance
+
 The `api.js` file creates a configured axios instance with:
+
 - Base URL set to the admin API endpoint
 - 10-second timeout
 - JSON content-type headers
@@ -27,13 +30,17 @@ The `api.js` file creates a configured axios instance with:
 ## Interceptors
 
 ### Request Interceptor
+
 Automatically:
+
 - Adds Authorization Bearer token from localStorage
 - Logs request details in development mode
 - Handles errors gracefully
 
 ### Response Interceptor
+
 Automatically:
+
 - Logs response details in development mode
 - Handles common HTTP error codes:
   - **401 Unauthorized**: Clears session and redirects to login
@@ -46,6 +53,7 @@ Automatically:
 ## Available API Services
 
 ### 1. Authentication API (`authAPI`)
+
 ```javascript
 import { authAPI } from './services/api';
 
@@ -60,6 +68,7 @@ authAPI.getCurrentUser();
 ```
 
 ### 2. Property API (`propertyAPI`)
+
 ```javascript
 import { propertyAPI } from './services/api';
 
@@ -80,6 +89,7 @@ propertyAPI.delete(id);
 ```
 
 ### 3. Account API (`accountAPI`)
+
 ```javascript
 import { accountAPI } from './services/api';
 
@@ -100,6 +110,7 @@ accountAPI.delete(id);
 ```
 
 ### 4. Booking API (`bookingAPI`)
+
 ```javascript
 import { bookingAPI } from './services/api';
 
@@ -120,6 +131,7 @@ bookingAPI.delete(id);
 ```
 
 ### 5. Staff API (`staffAPI`)
+
 ```javascript
 import { staffAPI } from './services/api';
 
@@ -186,6 +198,7 @@ try {
 ## Token Management
 
 The API automatically:
+
 1. Retrieves the token from localStorage (`adminUser` object)
 2. Adds it to all requests as `Authorization: Bearer <token>`
 3. Clears token and redirects to login on 401 errors
@@ -205,7 +218,7 @@ export const newAPI = {
   getById: (id) => api.get(`/new-endpoint/${id}`),
   create: (data) => api.post('/new-endpoint', data),
   update: (id, data) => api.put(`/new-endpoint/${id}`, data),
-  delete: (id) => api.delete(`/new-endpoint/${id}`),
+  delete: (id) => api.delete(`/new-endpoint/${id}`)
 };
 ```
 
@@ -215,5 +228,3 @@ export const newAPI = {
 - Access response data via `response.data`
 - Token is automatically included in all requests
 - Network errors are handled gracefully with fallback messages
-
-

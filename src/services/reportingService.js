@@ -27,8 +27,7 @@ export const reportingService = {
     if (params.format) queryParams.append('format', params.format);
     const queryString = queryParams.toString();
     return api.get(`/reports/bookings/export${queryString ? `?${queryString}` : ''}`);
-  },
+  }
 };
 
 export default reportingService;
-

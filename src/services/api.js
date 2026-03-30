@@ -17,12 +17,14 @@ const decodeJWT = (token) => {
 
 // Create axios instance with base URL
 const api = axios.create({
-  baseURL: 'http://localhost:8080/api/admin',
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8080/api/admin',
+  // baseURL:import.meta.env.VITE_API_URL ||'https://travel-rumours-api.applore.in/api/admin',
   timeout: 10000,
   headers: {
-    'Content-Type': 'application/json',
-  },
+    'Content-Type': 'application/json'
+  }
 });
+
 
 // Request interceptor
 api.interceptors.request.use(
@@ -34,10 +36,10 @@ api.interceptors.request.use(
         const userData = JSON.parse(adminUser);
         if (userData.token) {
           config.headers.Authorization = `Bearer ${userData.token}`;
-          
+
           // Decode token to check actual role in JWT
           const tokenPayload = decodeJWT(userData.token);
-          
+
           // Log user info in development (without exposing full token)
           if (process.env.NODE_ENV === 'development') {
             console.log('API Request - User Info:', {
@@ -46,21 +48,30 @@ api.interceptors.request.use(
               roleKey: userData.roleKey,
               tokenPresent: !!userData.token,
               tokenLength: userData.token?.length || 0,
-              tokenRole: tokenPayload?.role || tokenPayload?.roleKey || tokenPayload?.userRole || 'Not found in token',
+              tokenRole:
+                tokenPayload?.role ||
+                tokenPayload?.roleKey ||
+                tokenPayload?.userRole ||
+                'Not found in token',
               tokenEmail: tokenPayload?.email || tokenPayload?.userEmail || 'Not found in token',
               fullTokenPayload: tokenPayload // For debugging
             });
           }
-          
+
           // Warn if there's a mismatch between localStorage role and token role
           if (tokenPayload) {
             const tokenRole = tokenPayload.role || tokenPayload.roleKey || tokenPayload.userRole;
             const localStorageRole = userData.role || userData.roleKey;
-            if (tokenRole && localStorageRole && tokenRole.toLowerCase() !== localStorageRole.toLowerCase()) {
+            if (
+              tokenRole &&
+              localStorageRole &&
+              tokenRole.toLowerCase() !== localStorageRole.toLowerCase()
+            ) {
               console.warn('Role mismatch detected:', {
                 localStorageRole: localStorageRole,
                 tokenRole: tokenRole,
-                message: 'The role in the token differs from localStorage. The backend will use the token role.'
+                message:
+                  'The role in the token differs from localStorage. The backend will use the token role.'
               });
             }
           }
@@ -81,7 +92,7 @@ api.interceptors.request.use(
         url: config.url,
         baseURL: config.baseURL,
         hasAuth: !!config.headers.Authorization,
-        data: config.data,
+        data: config.data
       });
     }
 
@@ -101,7 +112,7 @@ api.interceptors.response.use(
       console.log('API Response:', {
         status: response.status,
         url: response.config.url,
-        data: response.data,
+        data: response.data
       });
     }
 
@@ -117,17 +128,18 @@ api.interceptors.response.use(
         console.error('API Error Response:', {
           status,
           url: error.config?.url,
-          data,
+          data
         });
       }
 
       // Handle specific status codes
       switch (status) {
-        case 401:
+        case 401: {
           // Unauthorized - only logout for critical endpoints (login, logout)
           // For other endpoints, let the component handle the error
           const url = error.config?.url || '';
-          const isCriticalEndpoint = url.includes('/login') || url.includes('/logout') || url.includes('/auth');
+          const isCriticalEndpoint =
+            url.includes('/login') || url.includes('/logout') || url.includes('/auth');
 
           if (isCriticalEndpoint) {
             localStorage.removeItem('adminUser');
@@ -138,34 +150,36 @@ api.interceptors.response.use(
 
           return Promise.reject({
             message: 'Session expired. Please login again.',
-            status,
+            status
           });
+        }
 
-        case 403:
+        case 403: {
           // For 403 errors, preserve the original error message from backend
           const originalMessage = data?.message || 'Access denied. You do not have permission.';
           return Promise.reject({
             message: originalMessage,
             status,
-            data: data, // Include full error data for debugging
+            data: data // Include full error data for debugging
           });
+        }
 
         case 404:
           return Promise.reject({
             message: 'Resource not found.',
-            status,
+            status
           });
 
         case 500:
           return Promise.reject({
             message: 'Server error. Please try again later.',
-            status,
+            status
           });
 
         default:
           return Promise.reject({
             message: data?.message || 'An error occurred. Please try again.',
-            status,
+            status
           });
       }
     } else if (error.request) {
@@ -173,14 +187,14 @@ api.interceptors.response.use(
       console.error('Network Error:', error.message);
       return Promise.reject({
         message: 'Unable to connect to server. Please check your internet connection.',
-        status: null,
+        status: null
       });
     } else {
       // Something else happened
       console.error('Error:', error.message);
       return Promise.reject({
         message: 'An unexpected error occurred.',
-        status: null,
+        status: null
       });
     }
   }
@@ -188,4 +202,3 @@ api.interceptors.response.use(
 
 // Export only the axios instance for use in service files
 export default api;
-

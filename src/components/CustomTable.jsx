@@ -2,7 +2,7 @@ import React from 'react';
 
 /**
  * CustomTable - A reusable, flexible table component
- * 
+ *
  * @param {Array} columns - Array of column configuration objects
  *   Each column object should have:
  *   - key: unique identifier for the column
@@ -12,7 +12,7 @@ import React from 'react';
  *   - headerClassName: (optional) custom className for header cell
  *   - cellClassName: (optional) custom className for body cell
  *   - width: (optional) column width
- * 
+ *
  * @param {Array} data - Array of data objects to display in rows
  * @param {String} emptyMessage - Message to display when data is empty
  * @param {String} tableClassName - Custom className for the table element
@@ -63,15 +63,17 @@ const CustomTable = ({
   };
 
   return (
-    <div className={containerClassName}>
+    <div
+      className={`${containerClassName} premium-glass rounded-2xl overflow-hidden shadow-sm border border-white/40`}
+    >
       <table className={tableClassName} style={minWidth ? { minWidth } : {}}>
         {showHeader && (
           <thead className={theadClassName}>
-            <tr className="bg-gray-50 border-b">
+            <tr className="bg-orange-50/50 border-b border-orange-100">
               {columns.map((column) => (
                 <th
                   key={column.key}
-                  className={`px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${
+                  className={`px-6 py-4 text-left text-[0.7rem] font-bold text-orange-900/60 uppercase tracking-[0.15em] ${
                     column.headerClassName || ''
                   }`}
                   style={column.width ? { width: column.width } : {}}
@@ -87,7 +89,7 @@ const CustomTable = ({
             <tr>
               <td
                 colSpan={columns.length}
-                className="px-6 py-8 text-center text-gray-500"
+                className="px-6 py-12 text-center text-gray-400 font-medium"
               >
                 {emptyMessage}
               </td>
@@ -96,15 +98,13 @@ const CustomTable = ({
             data.map((row, rowIndex) => (
               <tr
                 key={row.id || rowIndex}
-                className={getRowClassName(row, rowIndex)}
+                className={`${getRowClassName(row, rowIndex)} transition-all duration-200 group border-b border-gray-100 last:border-0 hover:bg-orange-50/30`}
                 onClick={() => handleRowClick(row, rowIndex)}
                 style={onRowClick ? { cursor: 'pointer' } : {}}
               >
                 {columns.map((column) => {
                   const value = getValue(row, column.accessor);
-                  const cellContent = column.render
-                    ? column.render(value, row, rowIndex)
-                    : value;
+                  const cellContent = column.render ? column.render(value, row, rowIndex) : value;
 
                   return (
                     <td
@@ -127,4 +127,3 @@ const CustomTable = ({
 };
 
 export default CustomTable;
-

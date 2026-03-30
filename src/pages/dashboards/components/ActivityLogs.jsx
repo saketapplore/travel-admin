@@ -113,29 +113,31 @@ const ActivityLogs = () => {
 
   const getFilteredLogs = () => {
     let filteredLogs = logs;
-    
+
     if (logsFilters.managerType !== 'All') {
-      filteredLogs = filteredLogs.filter(log => log.managerType === logsFilters.managerType);
+      filteredLogs = filteredLogs.filter((log) => log.managerType === logsFilters.managerType);
     }
-    
+
     if (logsFilters.activityType !== 'All') {
-      filteredLogs = filteredLogs.filter(log => log.activity.startsWith(logsFilters.activityType));
+      filteredLogs = filteredLogs.filter((log) =>
+        log.activity.startsWith(logsFilters.activityType)
+      );
     }
-    
+
     if (logsFilters.dateFrom) {
-      filteredLogs = filteredLogs.filter(log => {
+      filteredLogs = filteredLogs.filter((log) => {
         const logDate = log.timestamp.split(' ')[0];
         return logDate >= logsFilters.dateFrom;
       });
     }
-    
+
     if (logsFilters.dateTo) {
-      filteredLogs = filteredLogs.filter(log => {
+      filteredLogs = filteredLogs.filter((log) => {
         const logDate = log.timestamp.split(' ')[0];
         return logDate <= logsFilters.dateTo;
       });
     }
-    
+
     return filteredLogs;
   };
 
@@ -164,11 +166,15 @@ const ActivityLogs = () => {
       header: 'Manager Type',
       accessor: 'managerType',
       render: (value) => (
-        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-          value === 'Property Manager' ? 'bg-blue-100 text-blue-800' :
-          value === 'Booking Manager' ? 'bg-green-100 text-green-800' :
-          'bg-purple-100 text-purple-800'
-        }`}>
+        <span
+          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+            value === 'Property Manager'
+              ? 'bg-blue-100 text-blue-800'
+              : value === 'Booking Manager'
+                ? 'bg-green-100 text-green-800'
+                : 'bg-purple-100 text-purple-800'
+          }`}
+        >
           {value}
         </span>
       )
@@ -178,13 +184,19 @@ const ActivityLogs = () => {
       header: 'Activity',
       accessor: 'activity',
       render: (value) => (
-        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-          value.includes('Created') || value.includes('Added') || value.includes('Uploaded') ? 'bg-green-100 text-green-800' :
-          value.includes('Updated') ? 'bg-yellow-100 text-yellow-800' :
-          value.includes('Deleted') || value.includes('Rejected') ? 'bg-red-100 text-red-800' :
-          value.includes('Approved') ? 'bg-blue-100 text-blue-800' :
-          'bg-gray-100 text-gray-800'
-        }`}>
+        <span
+          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+            value.includes('Created') || value.includes('Added') || value.includes('Uploaded')
+              ? 'bg-green-100 text-green-800'
+              : value.includes('Updated')
+                ? 'bg-yellow-100 text-yellow-800'
+                : value.includes('Deleted') || value.includes('Rejected')
+                  ? 'bg-red-100 text-red-800'
+                  : value.includes('Approved')
+                    ? 'bg-blue-100 text-blue-800'
+                    : 'bg-gray-100 text-gray-800'
+          }`}
+        >
           {value}
         </span>
       )
@@ -205,8 +217,16 @@ const ActivityLogs = () => {
 
   const handleExportLogs = () => {
     const csvContent = [
-      ['Timestamp', 'Manager Name', 'Manager Email', 'Manager Type', 'Activity', 'Details', 'IP Address'],
-      ...filteredLogs.map(log => [
+      [
+        'Timestamp',
+        'Manager Name',
+        'Manager Email',
+        'Manager Type',
+        'Activity',
+        'Details',
+        'IP Address'
+      ],
+      ...filteredLogs.map((log) => [
         log.timestamp,
         log.managerName,
         log.managerEmail,
@@ -215,8 +235,10 @@ const ActivityLogs = () => {
         log.details,
         log.ipAddress
       ])
-    ].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
-    
+    ]
+      .map((row) => row.map((cell) => `"${cell}"`).join(','))
+      .join('\n');
+
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -232,7 +254,10 @@ const ActivityLogs = () => {
     <div className="bg-white rounded-lg shadow-md p-6 w-full max-w-full overflow-hidden">
       <div className="mb-6">
         <h3 className="text-xl font-semibold text-gray-800 mb-2">Activity Logs</h3>
-        <p className="text-sm text-gray-600">Monitor all activities performed by Property Managers, Staff Managers, and Booking Managers</p>
+        <p className="text-sm text-gray-600">
+          Monitor all activities performed by Property Managers, Staff Managers, and Booking
+          Managers
+        </p>
       </div>
 
       {/* Filters */}
@@ -289,17 +314,13 @@ const ActivityLogs = () => {
       </div>
 
       {/* Logs Table */}
-      <CustomTable
-        columns={columns}
-        data={filteredLogs}
-        emptyMessage="No activity logs found"
-      />
+      <CustomTable columns={columns} data={filteredLogs} emptyMessage="No activity logs found" />
 
       {/* Export Button */}
       <div className="mt-6 flex justify-end">
         <button
           onClick={handleExportLogs}
-          className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg font-semibold transition duration-200"
+          className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2.5 rounded-2xl font-bold transition-all duration-300 shadow-md active:scale-95"
         >
           📄 Export Logs
         </button>
@@ -309,6 +330,3 @@ const ActivityLogs = () => {
 };
 
 export default ActivityLogs;
-
-
-

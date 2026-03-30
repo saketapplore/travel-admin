@@ -1,13 +1,42 @@
 import React, { useState } from 'react';
 import CustomTable from '../../components/CustomTable';
 import { EditIcon, DeleteIcon } from '../../components/icons';
+import { Users, CheckCircle2, Palmtree, Building } from 'lucide-react';
 
 const StaffManagerDashboard = () => {
   const [staff, setStaff] = useState([
-    { id: 1, name: 'Emma Thompson', role: 'Housekeeping', property: 'Sunset Villa', status: 'Active', contact: '+1234567890' },
-    { id: 2, name: 'James Wilson', role: 'Receptionist', property: 'Ocean View Resort', status: 'Active', contact: '+1234567891' },
-    { id: 3, name: 'Sarah Johnson', role: 'Chef', property: 'Mountain Retreat', status: 'On Leave', contact: '+1234567892' },
-    { id: 4, name: 'Michael Brown', role: 'Security', property: 'Sunset Villa', status: 'Active', contact: '+1234567893' },
+    {
+      id: 1,
+      name: 'Emma Thompson',
+      role: 'Housekeeping',
+      property: 'Sunset Villa',
+      status: 'Active',
+      contact: '+1234567890'
+    },
+    {
+      id: 2,
+      name: 'James Wilson',
+      role: 'Receptionist',
+      property: 'Ocean View Resort',
+      status: 'Active',
+      contact: '+1234567891'
+    },
+    {
+      id: 3,
+      name: 'Sarah Johnson',
+      role: 'Chef',
+      property: 'Mountain Retreat',
+      status: 'On Leave',
+      contact: '+1234567892'
+    },
+    {
+      id: 4,
+      name: 'Michael Brown',
+      role: 'Security',
+      property: 'Sunset Villa',
+      status: 'Active',
+      contact: '+1234567893'
+    }
   ]);
 
   const [showModal, setShowModal] = useState(false);
@@ -22,7 +51,13 @@ const StaffManagerDashboard = () => {
 
   const handleAddStaff = () => {
     setEditingStaff(null);
-    setFormData({ name: '', role: 'Housekeeping', property: 'Sunset Villa', status: 'Active', contact: '' });
+    setFormData({
+      name: '',
+      role: 'Housekeeping',
+      property: 'Sunset Villa',
+      status: 'Active',
+      contact: ''
+    });
     setShowModal(true);
   };
 
@@ -35,9 +70,7 @@ const StaffManagerDashboard = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (editingStaff) {
-      setStaff(staff.map(s => 
-        s.id === editingStaff.id ? { ...formData, id: s.id } : s
-      ));
+      setStaff(staff.map((s) => (s.id === editingStaff.id ? { ...formData, id: s.id } : s)));
     } else {
       setStaff([...staff, { ...formData, id: Date.now() }]);
     }
@@ -46,7 +79,7 @@ const StaffManagerDashboard = () => {
 
   const handleDeleteStaff = (id) => {
     if (window.confirm('Are you sure you want to remove this staff member?')) {
-      setStaff(staff.filter(s => s.id !== id));
+      setStaff(staff.filter((s) => s.id !== id));
     }
   };
 
@@ -80,9 +113,11 @@ const StaffManagerDashboard = () => {
       header: 'Status',
       accessor: 'status',
       render: (value) => (
-        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-          value === 'Active' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-        }`}>
+        <span
+          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+            value === 'Active' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+          }`}
+        >
           {value}
         </span>
       )
@@ -123,7 +158,9 @@ const StaffManagerDashboard = () => {
     <div>
       <div className="mb-8">
         <h2 className="text-3xl font-bold text-gray-800 mb-2">Staff Manager Dashboard</h2>
-        <p className="text-gray-600">Onboard staff members, assign bookings, and manage staff roles</p>
+        <p className="text-gray-600">
+          Onboard staff members, assign bookings, and manage staff roles
+        </p>
       </div>
 
       {/* Statistics Cards */}
@@ -134,7 +171,9 @@ const StaffManagerDashboard = () => {
               <p className="text-gray-500 text-sm">Total Staff</p>
               <p className="text-3xl font-bold text-gray-800">{staff.length}</p>
             </div>
-            <div className="text-4xl">👥</div>
+            <div className="p-3 bg-blue-50 rounded-lg">
+              <Users className="w-8 h-8 text-blue-600" />
+            </div>
           </div>
         </div>
         <div className="bg-white rounded-lg shadow-md p-6">
@@ -142,10 +181,12 @@ const StaffManagerDashboard = () => {
             <div>
               <p className="text-gray-500 text-sm">Active</p>
               <p className="text-3xl font-bold text-green-600">
-                {staff.filter(s => s.status === 'Active').length}
+                {staff.filter((s) => s.status === 'Active').length}
               </p>
             </div>
-            <div className="text-4xl">✅</div>
+            <div className="p-3 bg-green-50 rounded-lg">
+              <CheckCircle2 className="w-8 h-8 text-green-600" />
+            </div>
           </div>
         </div>
         <div className="bg-white rounded-lg shadow-md p-6">
@@ -153,10 +194,12 @@ const StaffManagerDashboard = () => {
             <div>
               <p className="text-gray-500 text-sm">On Leave</p>
               <p className="text-3xl font-bold text-yellow-600">
-                {staff.filter(s => s.status === 'On Leave').length}
+                {staff.filter((s) => s.status === 'On Leave').length}
               </p>
             </div>
-            <div className="text-4xl">🏖️</div>
+            <div className="p-3 bg-yellow-50 rounded-lg">
+              <Palmtree className="w-8 h-8 text-yellow-600" />
+            </div>
           </div>
         </div>
         <div className="bg-white rounded-lg shadow-md p-6">
@@ -165,7 +208,9 @@ const StaffManagerDashboard = () => {
               <p className="text-gray-500 text-sm">Departments</p>
               <p className="text-3xl font-bold text-blue-600">4</p>
             </div>
-            <div className="text-4xl">🏢</div>
+            <div className="p-3 bg-indigo-50 rounded-lg">
+              <Building className="w-8 h-8 text-indigo-600" />
+            </div>
           </div>
         </div>
       </div>
@@ -281,5 +326,3 @@ const StaffManagerDashboard = () => {
 };
 
 export default StaffManagerDashboard;
-
-

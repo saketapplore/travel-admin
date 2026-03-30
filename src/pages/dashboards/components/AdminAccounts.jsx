@@ -19,19 +19,25 @@ const AdminAccounts = () => {
 
   const handleCreateAdmin = () => {
     setEditingAdmin(null);
-    setFormData({ name: '', email: '', password: '', roleKey: 'property-manager', status: 'Active' });
+    setFormData({
+      name: '',
+      email: '',
+      password: '',
+      roleKey: 'property-manager',
+      status: 'Active'
+    });
     setFormError('');
     setShowModal(true);
   };
 
   const handleEditAdmin = (admin) => {
     setEditingAdmin(admin);
-    setFormData({ 
-      name: admin.name, 
-      email: admin.email, 
+    setFormData({
+      name: admin.name,
+      email: admin.email,
       password: admin.password,
-      roleKey: admin.roleKey, 
-      status: admin.status 
+      roleKey: admin.roleKey,
+      status: admin.status
     });
     setFormError('');
     setShowModal(true);
@@ -103,9 +109,11 @@ const AdminAccounts = () => {
       header: 'Status',
       accessor: 'status',
       render: (value) => (
-        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-          value === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-        }`}>
+        <span
+          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+            value === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+          }`}
+        >
           {value}
         </span>
       )
@@ -165,7 +173,7 @@ const AdminAccounts = () => {
           <h3 className="text-xl font-semibold text-gray-800">Admin Accounts</h3>
           <button
             onClick={handleCreateAdmin}
-            className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg font-semibold transition duration-200 shadow-md"
+            className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2.5 rounded-2xl font-bold transition-all duration-300 shadow-md active:scale-95"
           >
             + Create New Account
           </button>
@@ -180,8 +188,14 @@ const AdminAccounts = () => {
 
       {/* Admin Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          onClick={() => setShowModal(false)}
+        >
+          <div
+            className="bg-white rounded-lg p-8 max-w-md w-full mx-4"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h3 className="text-2xl font-bold mb-6">
               {editingAdmin ? 'Edit Account' : 'Create New Account'}
             </h3>
@@ -218,7 +232,7 @@ const AdminAccounts = () => {
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                    placeholder={editingAdmin ? "Enter new password to change" : "Enter password"}
+                    placeholder={editingAdmin ? 'Enter new password to change' : 'Enter password'}
                     required={!editingAdmin}
                     minLength="6"
                   />
@@ -255,17 +269,17 @@ const AdminAccounts = () => {
                 </div>
               )}
 
-              <div className="flex space-x-3 mt-6">
+              <div className="flex space-x-4 mt-6">
                 <button
                   type="submit"
-                  className="flex-1 bg-orange-500 hover:bg-orange-600 text-white py-2 rounded-lg font-semibold transition duration-200"
+                  className="flex-1 bg-orange-500 hover:bg-orange-600 text-white py-3.5 rounded-2xl font-bold transition-all duration-300 shadow-md active:scale-95"
                 >
                   {editingAdmin ? 'Update' : 'Create Account'}
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 rounded-lg font-semibold transition duration-200"
+                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-600 py-3.5 rounded-2xl font-bold transition-all duration-200 border border-gray-200"
                 >
                   Cancel
                 </button>
@@ -279,6 +293,3 @@ const AdminAccounts = () => {
 };
 
 export default AdminAccounts;
-
-
-

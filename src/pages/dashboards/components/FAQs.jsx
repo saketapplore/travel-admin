@@ -26,35 +26,35 @@ const FAQs = () => {
   const fetchFAQs = async () => {
     setLoading(true);
     setError('');
-    
+
     try {
       const response = await faqService.getAll(currentPage, PAGE_SIZE);
       // Handle various response structures
       const data = response?.data?.data || response?.data || {};
-      const faqsArray = Array.isArray(data) ? data : (data.faqs || data.items || []);
-      
+      const faqsArray = Array.isArray(data) ? data : data.faqs || data.items || [];
+
       setFaqs(faqsArray);
-      
+
       // Handle pagination metadata
       if (data.totalPages !== undefined) {
         setTotalPages(data.totalPages);
       } else if (data.total !== undefined) {
         setTotalPages(Math.ceil(data.total / PAGE_SIZE));
       }
-      
+
       if (data.total !== undefined) {
         setTotalItems(data.total);
       } else if (data.totalItems !== undefined) {
         setTotalItems(data.totalItems);
       }
-      
+
       setError('');
     } catch (error) {
       console.error('FAQs fetch error:', error);
-      const errorMessage = 
-        error.response?.data?.message || 
+      const errorMessage =
+        error.response?.data?.message ||
         error.response?.data?.error ||
-        error.message || 
+        error.message ||
         'Failed to load FAQs. Please try again.';
       setError(errorMessage);
       setFaqs([]);
@@ -84,10 +84,10 @@ const FAQs = () => {
     if (!window.confirm('Are you sure you want to delete this FAQ?')) {
       return;
     }
-    
+
     try {
       // Based on screenshot, DELETE requires answer in body
-      const faq = faqs.find(f => (f._id === id || f.id === id));
+      const faq = faqs.find((f) => f._id === id || f.id === id);
       await faqService.delete(id, { answer: faq?.answer || '' });
       await fetchFAQs();
     } catch (error) {
@@ -123,17 +123,17 @@ const FAQs = () => {
           answer: formData.answer.trim()
         });
       }
-      
+
       await fetchFAQs();
       setShowModal(false);
       setFormData({ question: '', answer: '' });
       setEditingFaq(null);
     } catch (error) {
       console.error('FAQ submit error:', error);
-      const errorMessage = 
-        error.response?.data?.message || 
+      const errorMessage =
+        error.response?.data?.message ||
         error.response?.data?.error ||
-        error.message || 
+        error.message ||
         'Failed to save FAQ. Please try again.';
       setFormError(errorMessage);
     }
@@ -196,7 +196,7 @@ const FAQs = () => {
             </div>
             <button
               onClick={handleAddFaq}
-              className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition duration-200"
+              className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2.5 rounded-2xl font-bold transition-all duration-300 shadow-md active:scale-95"
             >
               + Add FAQ
             </button>
@@ -227,13 +227,19 @@ const FAQs = () => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {loading ? (
                   <tr>
-                    <td colSpan={columns.length} className="px-6 py-6 text-center text-sm text-gray-500">
+                    <td
+                      colSpan={columns.length}
+                      className="px-6 py-6 text-center text-sm text-gray-500"
+                    >
                       Loading...
                     </td>
                   </tr>
                 ) : faqs.length === 0 ? (
                   <tr>
-                    <td colSpan={columns.length} className="px-6 py-6 text-center text-sm text-gray-500">
+                    <td
+                      colSpan={columns.length}
+                      className="px-6 py-6 text-center text-sm text-gray-500"
+                    >
                       No FAQs available.
                     </td>
                   </tr>
@@ -243,10 +249,11 @@ const FAQs = () => {
                     return (
                       <tr key={faqId} className="hover:bg-gray-50">
                         {columns.map((col) => {
-                          const value = typeof col.accessor === 'function' 
-                            ? col.accessor(faq) 
-                            : faq[col.accessor];
-                          
+                          const value =
+                            typeof col.accessor === 'function'
+                              ? col.accessor(faq)
+                              : faq[col.accessor];
+
                           return (
                             <td
                               key={col.key}
@@ -305,8 +312,19 @@ const FAQs = () => {
 
       {/* FAQ Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto py-4">
-          <div className="bg-white rounded-lg p-8 max-w-2xl w-full mx-4 my-8 max-h-[90vh] flex flex-col">
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto py-4"
+          onClick={() => {
+            setShowModal(false);
+            setFormError('');
+            setFormData({ question: '', answer: '' });
+            setEditingFaq(null);
+          }}
+        >
+          <div
+            className="bg-white rounded-lg p-8 max-w-2xl w-full mx-4 my-8 max-h-[90vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h3 className="text-2xl font-bold mb-6 flex-shrink-0">
               {editingFaq ? 'Edit FAQ' : 'Add FAQ'}
             </h3>
@@ -329,7 +347,9 @@ const FAQs = () => {
                     placeholder="Enter the question"
                   />
                   {editingFaq && (
-                    <p className="mt-1 text-xs text-gray-500">Question cannot be edited after creation</p>
+                    <p className="mt-1 text-xs text-gray-500">
+                      Question cannot be edited after creation
+                    </p>
                   )}
                 </div>
                 <div>
@@ -354,11 +374,11 @@ const FAQs = () => {
                   </div>
                 )}
               </div>
-              
-              <div className="flex space-x-3 mt-6 flex-shrink-0">
+
+              <div className="flex space-x-4 mt-6 flex-shrink-0">
                 <button
                   type="submit"
-                  className="flex-1 bg-orange-500 hover:bg-orange-600 text-white py-2 rounded-lg font-semibold transition duration-200"
+                  className="flex-1 bg-orange-500 hover:bg-orange-600 text-white py-3.5 rounded-2xl font-bold transition-all duration-300 shadow-md active:scale-95"
                 >
                   {editingFaq ? 'Update' : 'Create'}
                 </button>
@@ -370,7 +390,7 @@ const FAQs = () => {
                     setFormData({ question: '', answer: '' });
                     setEditingFaq(null);
                   }}
-                  className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 rounded-lg font-semibold transition duration-200"
+                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-600 py-3.5 rounded-2xl font-bold transition-all duration-200 border border-gray-200"
                 >
                   Cancel
                 </button>
@@ -384,4 +404,3 @@ const FAQs = () => {
 };
 
 export default FAQs;
-

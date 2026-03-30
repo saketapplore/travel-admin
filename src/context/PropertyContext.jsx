@@ -19,8 +19,8 @@ export const PropertyProvider = ({ children }) => {
     if (savedAccounts) {
       const accounts = JSON.parse(savedAccounts);
       return accounts
-        .filter(account => account.roleKey === 'property-manager' && account.status === 'Active')
-        .map(account => ({
+        .filter((account) => account.roleKey === 'property-manager' && account.status === 'Active')
+        .map((account) => ({
           id: account.id,
           name: account.name,
           email: account.email
@@ -32,7 +32,7 @@ export const PropertyProvider = ({ children }) => {
   const addProperty = (property) => {
     const newProperty = {
       ...property,
-      id: Date.now(),
+      id: Date.now()
     };
     const updatedProperties = [...properties, newProperty];
     setProperties(updatedProperties);
@@ -41,7 +41,7 @@ export const PropertyProvider = ({ children }) => {
   };
 
   const updateProperty = (id, updatedData) => {
-    const updatedProperties = properties.map(prop =>
+    const updatedProperties = properties.map((prop) =>
       prop.id === id ? { ...prop, ...updatedData } : prop
     );
     setProperties(updatedProperties);
@@ -49,24 +49,26 @@ export const PropertyProvider = ({ children }) => {
   };
 
   const deleteProperty = (id) => {
-    const updatedProperties = properties.filter(prop => prop.id !== id);
+    const updatedProperties = properties.filter((prop) => prop.id !== id);
     setProperties(updatedProperties);
     localStorage.setItem('properties', JSON.stringify(updatedProperties));
   };
 
   const getPropertiesByManager = (managerEmail) => {
-    return properties.filter(prop => prop.assignedTo === managerEmail);
+    return properties.filter((prop) => prop.assignedTo === managerEmail);
   };
 
   return (
-    <PropertyContext.Provider value={{
-      properties,
-      propertyManagers: getPropertyManagers(),
-      addProperty,
-      updateProperty,
-      deleteProperty,
-      getPropertiesByManager
-    }}>
+    <PropertyContext.Provider
+      value={{
+        properties,
+        propertyManagers: getPropertyManagers(),
+        addProperty,
+        updateProperty,
+        deleteProperty,
+        getPropertiesByManager
+      }}
+    >
       {children}
     </PropertyContext.Provider>
   );
@@ -79,4 +81,3 @@ export const useProperties = () => {
   }
   return context;
 };
-

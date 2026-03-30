@@ -3,11 +3,12 @@ import { useAuth } from '../../context/AuthContext';
 import { useProperties } from '../../context/PropertyContext';
 import CustomTable from '../../components/CustomTable';
 import { ViewIcon, EditIcon } from '../../components/icons';
+import { Building2, CheckCircle2, CalendarDays, Bed } from 'lucide-react';
 
 const PropertyManagerDashboard = () => {
   const { user } = useAuth();
   const { properties: allProperties, getPropertiesByManager } = useProperties();
-  
+
   // Get only properties assigned to this property manager
   const properties = useMemo(() => {
     if (!user?.email) return [];
@@ -57,9 +58,11 @@ const PropertyManagerDashboard = () => {
       header: 'Status',
       accessor: 'status',
       render: (value) => (
-        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-          value === 'Available' ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'
-        }`}>
+        <span
+          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+            value === 'Available' ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'
+          }`}
+        >
           {value}
         </span>
       )
@@ -96,10 +99,10 @@ const PropertyManagerDashboard = () => {
   const getImageUrls = (property) => {
     const images = [];
     const seenUrls = new Set(); // To avoid duplicates
-    
+
     // Check if uploadedFiles array exists
     if (property.uploadedFiles && Array.isArray(property.uploadedFiles)) {
-      property.uploadedFiles.forEach(file => {
+      property.uploadedFiles.forEach((file) => {
         if (file.url && (file.type?.startsWith('image/') || file.url.startsWith('data:image'))) {
           // Only add valid image URLs and avoid duplicates
           if (file.url && !seenUrls.has(file.url)) {
@@ -109,29 +112,39 @@ const PropertyManagerDashboard = () => {
         }
       });
     }
-    
+
     // Also check media field for comma-separated URLs or base64 strings
     // Only if uploadedFiles doesn't already have the images (to avoid duplicates)
     if (property.media && (!property.uploadedFiles || property.uploadedFiles.length === 0)) {
-      const mediaItems = property.media.split(',').map(item => item.trim()).filter(Boolean);
-      mediaItems.forEach(item => {
+      const mediaItems = property.media
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean);
+      mediaItems.forEach((item) => {
         // Check if it's a base64 image or a URL, and not already seen
-        if ((item.startsWith('data:image') || item.startsWith('http://') || item.startsWith('https://')) && !seenUrls.has(item)) {
+        if (
+          (item.startsWith('data:image') ||
+            item.startsWith('http://') ||
+            item.startsWith('https://')) &&
+          !seenUrls.has(item)
+        ) {
           images.push(item);
           seenUrls.add(item);
         }
       });
     }
-    
+
     // Filter out any invalid or empty URLs
-    return images.filter(url => url && url.trim().length > 0);
+    return images.filter((url) => url && url.trim().length > 0);
   };
 
   return (
     <div>
       <div className="mb-8">
         <h2 className="text-3xl font-bold text-gray-800 mb-2">Property Manager Dashboard</h2>
-        <p className="text-gray-600">Manage property details, availability, and bookings assigned to you</p>
+        <p className="text-gray-600">
+          Manage property details, availability, and bookings assigned to you
+        </p>
       </div>
 
       {/* Statistics Cards */}
@@ -142,7 +155,9 @@ const PropertyManagerDashboard = () => {
               <p className="text-gray-500 text-sm">Total Properties</p>
               <p className="text-3xl font-bold text-gray-800">{properties.length}</p>
             </div>
-            <div className="text-4xl">🏢</div>
+            <div className="p-3 bg-blue-50 rounded-lg">
+              <Building2 className="w-8 h-8 text-blue-600" />
+            </div>
           </div>
         </div>
         <div className="bg-white rounded-lg shadow-md p-6">
@@ -150,10 +165,12 @@ const PropertyManagerDashboard = () => {
             <div>
               <p className="text-gray-500 text-sm">Available</p>
               <p className="text-3xl font-bold text-green-600">
-                {properties.filter(p => p.status === 'Available').length}
+                {properties.filter((p) => p.status === 'Available').length}
               </p>
             </div>
-            <div className="text-4xl">✅</div>
+            <div className="p-3 bg-green-50 rounded-lg">
+              <CheckCircle2 className="w-8 h-8 text-green-600" />
+            </div>
           </div>
         </div>
         <div className="bg-white rounded-lg shadow-md p-6">
@@ -161,10 +178,12 @@ const PropertyManagerDashboard = () => {
             <div>
               <p className="text-gray-500 text-sm">Booked</p>
               <p className="text-3xl font-bold text-orange-600">
-                {properties.filter(p => p.status === 'Booked').length}
+                {properties.filter((p) => p.status === 'Booked').length}
               </p>
             </div>
-            <div className="text-4xl">📅</div>
+            <div className="p-3 bg-orange-50 rounded-lg">
+              <CalendarDays className="w-8 h-8 text-orange-600" />
+            </div>
           </div>
         </div>
         <div className="bg-white rounded-lg shadow-md p-6">
@@ -175,7 +194,9 @@ const PropertyManagerDashboard = () => {
                 {properties.reduce((sum, p) => sum + Number(p.rooms || 0), 0)}
               </p>
             </div>
-            <div className="text-4xl">🛏️</div>
+            <div className="p-3 bg-indigo-50 rounded-lg">
+              <Bed className="w-8 h-8 text-indigo-600" />
+            </div>
           </div>
         </div>
       </div>
@@ -214,21 +235,25 @@ const PropertyManagerDashboard = () => {
                 </div>
                 <div>
                   <p className="font-semibold text-gray-700 mb-1">Status:</p>
-                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                    selectedProperty.status === 'Available' ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'
-                  }`}>
+                  <span
+                    className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                      selectedProperty.status === 'Available'
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-orange-100 text-orange-800'
+                    }`}
+                  >
                     {selectedProperty.status}
                   </span>
                 </div>
               </div>
-              
+
               {selectedProperty.description && (
                 <div>
                   <p className="font-semibold text-gray-700 mb-1">Description:</p>
                   <p className="text-gray-600">{selectedProperty.description}</p>
                 </div>
               )}
-              
+
               {selectedProperty.amenities && (
                 <div>
                   <p className="font-semibold text-gray-700 mb-1">Amenities:</p>
@@ -242,7 +267,9 @@ const PropertyManagerDashboard = () => {
                 if (imageUrls.length > 0) {
                   return (
                     <div>
-                      <p className="font-semibold text-gray-700 mb-3">Media ({imageUrls.length}):</p>
+                      <p className="font-semibold text-gray-700 mb-3">
+                        Media ({imageUrls.length}):
+                      </p>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                         {imageUrls.map((url, index) => (
                           <div key={index} className="relative group">
@@ -265,20 +292,37 @@ const PropertyManagerDashboard = () => {
               })()}
 
               {/* Documents List */}
-              {selectedProperty.uploadedFiles && Array.isArray(selectedProperty.uploadedFiles) && (
+              {selectedProperty.uploadedFiles &&
+                Array.isArray(selectedProperty.uploadedFiles) &&
                 (() => {
                   const documents = selectedProperty.uploadedFiles.filter(
-                    file => !file.type?.startsWith('image/') && !file.url?.startsWith('data:image')
+                    (file) =>
+                      !file.type?.startsWith('image/') && !file.url?.startsWith('data:image')
                   );
                   if (documents.length > 0) {
                     return (
                       <div>
-                        <p className="font-semibold text-gray-700 mb-2">Documents ({documents.length}):</p>
+                        <p className="font-semibold text-gray-700 mb-2">
+                          Documents ({documents.length}):
+                        </p>
                         <div className="space-y-2">
                           {documents.map((doc, index) => (
-                            <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                              <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                            <div
+                              key={index}
+                              className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200"
+                            >
+                              <svg
+                                className="w-8 h-8 text-gray-400"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                                />
                               </svg>
                               <div className="flex-1">
                                 <p className="text-sm font-medium text-gray-700">{doc.name}</p>
@@ -293,31 +337,42 @@ const PropertyManagerDashboard = () => {
                     );
                   }
                   return null;
-                })()
-              )}
+                })()}
 
               {/* Availability Calendar Summary */}
-              {selectedProperty.selectedDates && Array.isArray(selectedProperty.selectedDates) && selectedProperty.selectedDates.length > 0 && (
-                <div>
-                  <p className="font-semibold text-gray-700 mb-2">Availability:</p>
-                  <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-                    <div className="flex items-center gap-4 text-sm">
-                      <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 bg-red-500 rounded"></div>
-                        <span className="text-gray-600">
-                          Booked: {selectedProperty.selectedDates.filter(d => d.status === 'booked').length} dates
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 bg-green-500 rounded"></div>
-                        <span className="text-gray-600">
-                          Available: {selectedProperty.selectedDates.filter(d => d.status === 'available').length} dates
-                        </span>
+              {selectedProperty.selectedDates &&
+                Array.isArray(selectedProperty.selectedDates) &&
+                selectedProperty.selectedDates.length > 0 && (
+                  <div>
+                    <p className="font-semibold text-gray-700 mb-2">Availability:</p>
+                    <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                      <div className="flex items-center gap-4 text-sm">
+                        <div className="flex items-center gap-2">
+                          <div className="w-4 h-4 bg-red-500 rounded"></div>
+                          <span className="text-gray-600">
+                            Booked:{' '}
+                            {
+                              selectedProperty.selectedDates.filter((d) => d.status === 'booked')
+                                .length
+                            }{' '}
+                            dates
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-4 h-4 bg-green-500 rounded"></div>
+                          <span className="text-gray-600">
+                            Available:{' '}
+                            {
+                              selectedProperty.selectedDates.filter((d) => d.status === 'available')
+                                .length
+                            }{' '}
+                            dates
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
             </div>
             <button
               onClick={() => setShowModal(false)}
@@ -333,4 +388,3 @@ const PropertyManagerDashboard = () => {
 };
 
 export default PropertyManagerDashboard;
-
