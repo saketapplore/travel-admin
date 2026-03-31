@@ -9,6 +9,7 @@ export const useFinancialManagement = () => {
   const [filters, setFilters] = useState({
     bookingType: '',
     status: '',
+    bookingStatus: '',
     search: '',
     page: 1,
     limit: 10
@@ -30,6 +31,7 @@ export const useFinancialManagement = () => {
         limit: filters.limit,
         bookingType: filters.bookingType || undefined,
         status: filters.status || undefined,
+        bookingStatus: filters.bookingStatus || undefined,
         search: filters.search || undefined
       });
 
@@ -82,6 +84,13 @@ export const useFinancialManagement = () => {
           transaction.bookingId ||
           transaction.booking_id ||
           transaction._id ||
+          'N/A',
+        bookingStatus:
+          transaction.bookingDetails?.status ||
+          transaction.bookingDetails?.hotelStatus ||
+          transaction.bookingDetails?.bookingStatus ||
+          transaction.booking?.status ||
+          transaction.booking_status ||
           'N/A'
       }));
 

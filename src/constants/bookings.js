@@ -17,5 +17,6 @@ export const BookingStatus = {
 export const BookingType = {
   Flight: 'FLIGHT',
   Hotel: 'HOTEL',
+  Return_Flight: 'DOMESTIC_RETURN',
   Property: 'PROPERTY'
 };

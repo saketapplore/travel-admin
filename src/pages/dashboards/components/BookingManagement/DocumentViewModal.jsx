@@ -1,72 +1,78 @@
 import React from 'react';
-import { X, FileText, Image as ImageIcon } from 'lucide-react';
+import { X, FileText, ExternalLink } from 'lucide-react';
 
 const DocumentViewModal = ({ isOpen, onClose, documents, loading, error }) => {
   if (!isOpen) return null;
 
-  const renderDocument = (title, url) => {
-    if (!url) {
-      return (
-        <div className="flex flex-col items-center justify-center p-6 bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl">
-          <FileText className="w-8 h-8 text-gray-400 mb-2" />
-          <p className="text-sm text-gray-500 font-medium">No document uploaded</p>
-        </div>
-      );
+  const getDocumentUrl = (url) => {
+    if (!url) return '';
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    
+    let baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/admin';
+    if (baseUrl.includes('/api/admin')) {
+      baseUrl = baseUrl.replace('/api/admin', '');
     }
+    
+    const formattedUrl = url.startsWith('/') ? url : `/${url}`;
+    return `${baseUrl}${formattedUrl}`;
+  };
 
-    const isPdf = url.toLowerCase().endsWith('.pdf');
+  const renderDocumentCard = (title, number, url, dotColor) => {
+    const hasDocument = !!url;
+    const fullUrl = hasDocument ? getDocumentUrl(url) : '';
 
     return (
-      <div className="flex flex-col space-y-3">
-        {isPdf ? (
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200">
-            <div className="flex items-center space-x-3">
-              <FileText className="w-6 h-6 text-orange-500" />
-              <span className="text-sm font-medium text-gray-700 truncate max-w-[200px]">{title} Document.pdf</span>
+      <div className="bg-white rounded-xl border border-gray-200 p-5 flex flex-col gap-3 shadow-sm">
+        {/* Title row */}
+        <div className="flex items-center justify-between">
+          <h4 className="font-semibold text-gray-800 flex items-center gap-2 text-[15px]">
+            <div className={`w-2.5 h-2.5 rounded-full ${dotColor}`}></div>
+            {title}
+          </h4>
+          {number && (
+            <span className="text-xs font-mono bg-gray-100 px-2.5 py-1 rounded-md text-gray-600 border border-gray-200">
+              {number}
+            </span>
+          )}
+        </div>
+
+        {/* Status + View button */}
+        {hasDocument ? (
+          <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg px-4 py-3">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-green-500"></div>
+              <span className="text-sm font-medium text-green-700">Document uploaded</span>
             </div>
-            <a 
-              href={url} 
-              target="_blank" 
+            <a
+              href={fullUrl}
+              target="_blank"
               rel="noopener noreferrer"
-              className="px-4 py-2 text-sm font-semibold text-orange-600 bg-orange-50 hover:bg-orange-100 rounded-lg transition-colors"
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-sm active:scale-95"
             >
-              View PDF
+              <ExternalLink className="w-4 h-4" />
+              View
             </a>
           </div>
         ) : (
-          <div className="relative group rounded-xl overflow-hidden border border-gray-200 bg-gray-50 aspect-video">
-            <img 
-              src={url} 
-              alt={title} 
-              className="w-full h-full object-contain"
-              onError={(e) => {
-                e.target.style.display = 'none';
-                e.target.nextSibling.style.display = 'flex';
-              }}
-            />
-            <div className="hidden absolute inset-0 flex-col items-center justify-center bg-gray-100 text-gray-500">
-              <ImageIcon className="w-8 h-8 mb-2 opacity-50" />
-              <span className="text-sm font-medium">Failed to load image</span>
+          <div className="flex items-center justify-between bg-gray-50 border-2 border-dashed border-gray-200 rounded-lg px-4 py-3">
+            <div className="flex items-center gap-2">
+              <FileText className="w-5 h-5 text-gray-400" />
+              <span className="text-sm text-gray-500 font-medium">No document uploaded</span>
             </div>
-            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-              <a 
-                href={url} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="px-4 py-2 bg-white text-gray-900 rounded-lg text-sm font-bold shadow-lg hover:scale-105 transition-transform"
-              >
-                Open in New Tab
-              </a>
-            </div>
+            <span className="px-4 py-2 text-sm font-semibold text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed border border-gray-200">
+              View
+            </span>
           </div>
         )}
       </div>
     );
   };
 
+  const userDocs = documents?.userDocuments || null;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
         
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50/50">
@@ -97,7 +103,7 @@ const DocumentViewModal = ({ isOpen, onClose, documents, loading, error }) => {
               <h4 className="text-lg font-bold text-gray-800 mb-2">Failed to load documents</h4>
               <p className="text-gray-500 max-w-md">{error}</p>
             </div>
-          ) : !documents ? (
+          ) : !userDocs ? (
             <div className="flex flex-col items-center justify-center py-12">
               <div className="w-16 h-16 bg-gray-50 text-gray-400 rounded-full flex items-center justify-center mb-4 border border-gray-100">
                 <FileText className="w-8 h-8 opacity-50" />
@@ -105,55 +111,25 @@ const DocumentViewModal = ({ isOpen, onClose, documents, loading, error }) => {
               <p className="text-gray-500 font-medium">No travel details found for this user.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Passport */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between border-b border-gray-100 pb-2">
-                  <h4 className="font-semibold text-gray-800 flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                    Passport
-                  </h4>
-                  {documents.passportNumber && (
-                    <span className="text-xs font-mono bg-gray-100 px-2 py-1 rounded text-gray-600">
-                      {documents.passportNumber}
-                    </span>
-                  )}
-                </div>
-                {renderDocument('Passport', documents.passportPhoto)}
-              </div>
-
-              {/* PAN Card */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between border-b border-gray-100 pb-2">
-                  <h4 className="font-semibold text-gray-800 flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-orange-500"></div>
-                    PAN Card
-                  </h4>
-                  {documents.panNumber && (
-                    <span className="text-xs font-mono bg-gray-100 px-2 py-1 rounded text-gray-600">
-                      {documents.panNumber}
-                    </span>
-                  )}
-                </div>
-                {renderDocument('PAN Card', documents.panPhoto)}
-              </div>
-
-              {/* Aadhar Card */}
-              <div className="space-y-3 md:col-span-2 max-w-md">
-                <div className="flex items-center justify-between border-b border-gray-100 pb-2">
-                  <h4 className="font-semibold text-gray-800 flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                    Aadhar Card
-                  </h4>
-                  {documents.aadharNumber && (
-                    <span className="text-xs font-mono bg-gray-100 px-2 py-1 rounded text-gray-600">
-                      {documents.aadharNumber}
-                    </span>
-                  )}
-                </div>
-                {renderDocument('Aadhar Card', documents.aadharPhoto)}
-              </div>
-              
+            <div className="space-y-4">
+              {renderDocumentCard(
+                'Passport',
+                userDocs.passportNumber,
+                userDocs.passportPhoto,
+                'bg-blue-500'
+              )}
+              {renderDocumentCard(
+                'PAN Card',
+                userDocs.panNumber,
+                userDocs.panPhoto,
+                'bg-orange-500'
+              )}
+              {renderDocumentCard(
+                'Aadhar Card',
+                userDocs.aadharNumber,
+                userDocs.aadharPhoto,
+                'bg-green-500'
+              )}
             </div>
           )}
         </div>

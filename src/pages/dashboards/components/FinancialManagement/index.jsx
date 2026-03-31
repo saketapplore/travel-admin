@@ -30,9 +30,12 @@ const FinancialManagement = () => {
       )}
 
       <div className="mb-6">
-        <h4 className="text-lg font-semibold text-gray-800 mb-4">All Transactions</h4>
-
-        <TransactionTable transactions={transactions} loading={loading} />
+        <TransactionTable 
+          transactions={transactions} 
+          loading={loading} 
+          filters={filters}
+          onSearch={(searchTerm) => handleFilterChange('search', searchTerm)}
+        />
 
         {!loading && transactions.length > 0 && (
           <Pagination

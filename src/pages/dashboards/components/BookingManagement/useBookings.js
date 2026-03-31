@@ -33,6 +33,7 @@ export const useBookings = () => {
       status: '',
       paymentStatus: '',
       bookingType: '',
+      search: '',
       page: 1,
       limit: 10
     };
@@ -52,6 +53,7 @@ export const useBookings = () => {
       const response = await bookingService.getAll({
         page: filters.page,
         limit: filters.limit,
+        search: filters.search,
         status: filters.status,
         paymentStatus: filters.paymentStatus,
         bookingType: filters.bookingType
@@ -65,13 +67,19 @@ export const useBookings = () => {
         _id: booking._id || booking.id,
         bookingType: booking.bookingType || booking.type || booking.booking_type || 'N/A',
         status: booking.status || booking.bookingStatus || 'pending',
-        username:
-          booking.username ||
-          booking.user?.username ||
-          booking.guest?.username ||
-          booking.guestName ||
-          booking.user?.name ||
-          'N/A',
+        username: (() => {
+          // Prefer lead passenger name (actual traveler) over account holder name
+          const leadPaxName = booking.leadPassenger
+            ? `${booking.leadPassenger.firstName} ${booking.leadPassenger.lastName}`.trim()
+            : null;
+          return leadPaxName ||
+            booking.username ||
+            booking.user?.username ||
+            booking.guest?.username ||
+            booking.guestName ||
+            booking.user?.name ||
+            'N/A';
+        })(),
         userEmail:
           booking.userEmail ||
           booking.user?.email ||
@@ -113,7 +121,11 @@ export const useBookings = () => {
         createdAt: booking.createdAt || booking.created_at || '',
         notes: booking.notes || booking.remarks || '',
         familyMembers: booking.familyMembers || booking.guests || [],
-        userId: booking.user?._id || booking.user?.id || ''
+        userId: booking.user?._id || booking.user?.id || '',
+        _source: booking._source || 'bookings',
+        flightDetails: booking.flightDetails || null,
+        OB_status: booking.OB_status || null,
+        IB_status: booking.IB_status || null
       }));
 
       setBookings(normalizedBookings);
@@ -188,10 +200,10 @@ export const useBookings = () => {
     setDocumentError('');
     setSelectedUserDocs(null);
     try {
-      if (!booking.userId) {
-        throw new Error("User ID is missing for this booking.");
+      if (!booking.id) {
+        throw new Error("Booking ID is missing.");
       }
-      const response = await bookingService.getUserDocuments(booking.userId);
+      const response = await bookingService.getBookingDocuments(booking.id);
       setSelectedUserDocs(response?.data?.data || response?.data || response);
     } catch (err) {
       setDocumentError(err?.response?.data?.message || err?.message || 'Failed to fetch documents');

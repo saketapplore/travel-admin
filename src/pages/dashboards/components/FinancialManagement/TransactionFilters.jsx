@@ -33,14 +33,20 @@ const TransactionFilters = ({ filters, onFilterChange }) => {
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
-          <input
-            type="text"
-            value={filters.search}
-            onChange={(e) => onFilterChange('search', e.target.value)}
-            placeholder="Search by name..."
+          <label className="block text-sm font-medium text-gray-700 mb-2">Booking Status</label>
+          <select
+            value={filters.bookingStatus}
+            onChange={(e) => onFilterChange('bookingStatus', e.target.value)}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-          />
+          >
+            <option value="">All Status</option>
+            <option value="pending">PENDING</option>
+            <option value="confirmed">CONFIRMED</option>
+            <option value="cancelled">CANCELLED</option>
+            <option value="failed">FAILED</option>
+            <option value="hold_flight">HOLD FLIGHT</option>
+            <option value="hold_failed">HOLD FAILED</option>
+          </select>
         </div>
       </div>
     </div>

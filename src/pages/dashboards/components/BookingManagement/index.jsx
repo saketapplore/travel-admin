@@ -75,6 +75,7 @@ const BookingManagement = () => {
           onViewBooking={handleViewBooking}
           onGenerateInvoice={generateBookingInvoice}
           onViewDocuments={handleViewDocuments}
+          onSearch={(searchTerm) => handleFilterChange('search', searchTerm)}
         />
       </div>
 

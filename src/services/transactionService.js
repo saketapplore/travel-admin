@@ -11,6 +11,7 @@ export const transactionService = {
     if (params.limit) queryParams.append('limit', params.limit);
     if (params.bookingType) queryParams.append('bookingType', params.bookingType);
     if (params.status) queryParams.append('status', params.status);
+    if (params.bookingStatus) queryParams.append('bookingStatus', params.bookingStatus);
     if (params.search) queryParams.append('search', params.search);
     const queryString = queryParams.toString();
     return api.get(`/transactions${queryString ? `?${queryString}` : ''}`);

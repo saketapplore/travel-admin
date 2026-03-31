@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import CustomTable from '@/components/CustomTable';
 import { getBookingStatusColor, getPaymentStatusColor, formatStatus } from '@/utils/formatters';
+import { Search, X as XIcon } from 'lucide-react';
 
 const BookingTable = ({
   bookings,
@@ -10,14 +11,63 @@ const BookingTable = ({
   onPageChange,
   onViewBooking,
   onGenerateInvoice,
-  onViewDocuments
+  onViewDocuments,
+  onSearch
 }) => {
+  const [searchInput, setSearchInput] = useState(filters.search || '');
+  const debounceRef = useRef(null);
+
+  // Debounce search — waits 500ms after user stops typing, then fires
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      if (onSearch && searchInput !== (filters.search || '')) {
+        onSearch(searchInput);
+      }
+    }, 500);
+    return () => clearTimeout(debounceRef.current);
+  }, [searchInput]);
+
+  const handleClear = () => {
+    setSearchInput('');
+    if (onSearch) onSearch('');
+  };
+
   const columns = [
     {
       key: 'bookingType',
       header: 'Booking Type',
       accessor: 'bookingType',
-      render: (value) => value || 'N/A',
+      render: (value, row) => {
+        if (value === 'DOMESTIC_RETURN') {
+          const route = row.flightDetails?.Origin && row.flightDetails?.Destination
+            ? ` (${row.flightDetails.Origin} ↔ ${row.flightDetails.Destination})`
+            : '';
+          return (
+            <span className="inline-flex items-center gap-1">
+              <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">
+                Return Flight
+              </span>
+              {route && <span className="text-xs text-gray-500">{route}</span>}
+            </span>
+          );
+        }
+        if (value === 'FLIGHT') {
+          return (
+            <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+              Flight
+            </span>
+          );
+        }
+        if (value === 'HOTEL') {
+          return (
+            <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-amber-100 text-amber-800">
+              Hotel
+            </span>
+          );
+        }
+        return value || 'N/A';
+      },
       cellClassName: 'text-sm text-gray-700 font-medium'
     },
     {
@@ -157,18 +207,40 @@ const BookingTable = ({
     }
   ];
 
-  if (loading) {
-    return <div className="text-center py-8 text-gray-500">Loading bookings...</div>;
-  }
-
   return (
     <div className="mb-6">
-      <h4 className="text-lg font-semibold text-gray-800 mb-4">All Bookings</h4>
-      <CustomTable columns={columns} data={bookings} emptyMessage="No bookings found." />
+      {/* Search Bar + Title */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
+        <h4 className="text-lg font-semibold text-gray-800">All Bookings</h4>
+        <div className="relative w-full sm:w-80">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            placeholder="Search by MongoDB ID, name, order..."
+            className="w-full pl-10 pr-9 py-2.5 text-sm border border-gray-200 rounded-lg bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all placeholder:text-gray-400"
+          />
+          {searchInput && (
+            <button
+              onClick={handleClear}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-gray-400 hover:text-gray-600 rounded-full transition-colors"
+            >
+              <XIcon className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="text-center py-8 text-gray-500">Loading bookings...</div>
+      ) : (
+        <>
+          <CustomTable columns={columns} data={bookings} emptyMessage="No bookings found." />
 
       {bookings.length > 0 && (
-        <div className="flex items-center justify-between mt-4 px-4 py-3 border-t border-gray-200">
-          <div className="text-sm text-gray-700">
+        <div className="flex flex-col md:flex-row items-center justify-between mt-4 px-4 py-3 border-t border-gray-200 gap-4">
+          <div className="text-sm text-gray-700 whitespace-nowrap">
             {(() => {
               const startIndex = (filters.page - 1) * filters.limit;
               const endIndex = Math.min(
@@ -179,7 +251,7 @@ const BookingTable = ({
               return `Showing ${startIndex + 1} to ${endIndex} of ${totalItems} bookings`;
             })()}
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex flex-wrap justify-center items-center gap-2">
             <button
               onClick={() => {
                 if (filters.page > 1) {
@@ -187,31 +259,58 @@ const BookingTable = ({
                 }
               }}
               disabled={filters.page <= 1}
-              className={`px-6 py-2 rounded-xl font-bold transition-all duration-300 ${
+              className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
                 filters.page <= 1
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
-                  : 'bg-orange-500 text-white shadow-md active:scale-95 cursor-pointer'
+                  ? 'bg-gray-50 text-gray-400 cursor-not-allowed border border-gray-200'
+                  : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 shadow-sm cursor-pointer'
               }`}
             >
               Previous
             </button>
+            
+            <div className="flex flex-wrap items-center gap-1.5 custom-scrollbar max-w-full justify-center">
+              {(() => {
+                const totalPages = pagination.totalPages || 1;
+                const maxVisiblePages = 10;
+                const startPage = Math.floor((filters.page - 1) / maxVisiblePages) * maxVisiblePages + 1;
+                const endPage = Math.min(startPage + maxVisiblePages - 1, totalPages);
+                
+                return Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i).map((page) => (
+                  <button
+                    key={page}
+                    onClick={() => onPageChange(page)}
+                    className={`min-w-[36px] h-9 px-2.5 rounded-lg flex items-center justify-center text-sm font-medium transition-colors border ${
+                      filters.page === page
+                        ? 'bg-orange-500 text-white border-orange-500 shadow-sm'
+                        : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50 hover:text-gray-900'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ));
+              })()}
+              {pagination.totalPages > (Math.floor((filters.page - 1) / 10) * 10 + 10) && (
+                <span className="text-gray-500 font-medium px-2">...</span>
+              )}
+            </div>
+
             <button
               onClick={() => {
                 onPageChange(filters.page + 1);
               }}
-              disabled={
+              disabled={bookings.length < filters.limit && filters.page >= (pagination.totalPages || 1)}
+              className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
                 bookings.length < filters.limit && filters.page >= (pagination.totalPages || 1)
-              }
-              className={`px-6 py-2 rounded-xl font-bold transition-all duration-300 ${
-                bookings.length < filters.limit && filters.page >= (pagination.totalPages || 1)
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
-                  : 'bg-orange-500 text-white shadow-md active:scale-95 cursor-pointer'
+                  ? 'bg-gray-50 text-gray-400 cursor-not-allowed border border-gray-200'
+                  : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 shadow-sm cursor-pointer'
               }`}
             >
               Next
             </button>
           </div>
         </div>
+      )}
+        </>
       )}
     </div>
   );
