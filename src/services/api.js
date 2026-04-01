@@ -15,11 +15,10 @@ const decodeJWT = (token) => {
   }
 };
 
-// Create axios instance with base URL
+// Create axios instance with base URL from environment variables
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8080/api/admin',
-  // baseURL:import.meta.env.VITE_API_URL ||'https://travel-rumours-api.applore.in/api/admin',
-  timeout: 10000,
+  baseURL: import.meta.env.VITE_API_URL || 'https://travel-rumours-api.applore.in/',
+  timeout: 15000, // Slightly increased timeout for production reliability
   headers: {
     'Content-Type': 'application/json'
   }
