@@ -60,13 +60,7 @@ const PropertyDetail = ({
   updatingImages,
   imageUpdateTarget
 }) => {
-  const [expandedRooms, setExpandedRooms] = useState({});
-
   if (!property) return null;
-
-  const toggleRoom = (roomId) => {
-    setExpandedRooms((prev) => ({ ...prev, [roomId]: !prev[roomId] }));
-  };
 
   const texts = property.texts?.[0] || {};
   const bookingRules = property.bookingRules || {};
@@ -315,77 +309,72 @@ const PropertyDetail = ({
                       key={room.id}
                       className="border border-gray-200 rounded-2xl overflow-hidden bg-white"
                     >
-                      {/* Room header (always visible) */}
-                      <button
-                        onClick={() => toggleRoom(room.id)}
-                        className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-gray-50 transition-colors"
-                      >
+                      {/* Room header */}
+                      <div className="w-full flex items-center justify-between px-4 py-4 bg-gray-50/50 border-b border-gray-100">
                         <div className="flex items-center gap-3 text-left">
-                          <div className="p-2 bg-orange-50 rounded-xl">
+                          <div className="p-2 bg-orange-50 rounded-xl shadow-sm">
                             <BedDouble className="w-5 h-5 text-orange-500" />
                           </div>
                           <div>
-                            <p className="text-sm font-semibold text-gray-800">{room.name}</p>
+                            <p className="text-sm font-bold text-gray-800">{room.name}</p>
                             <div className="flex items-center gap-3 text-xs text-gray-500 mt-0.5">
                               <span className="flex items-center gap-1">
-                                <Users className="w-3 h-3" /> Max {room.maxPeople || 'N/A'}
+                                <Users className="w-3 h-3 text-gray-400" /> Max {room.maxPeople || 'N/A'}
                               </span>
                               <span>Qty: {room.qty || 1}</span>
                               {room.rackRate && (
-                                <span className="text-orange-600 font-semibold">
+                                <span className="text-orange-600 font-bold bg-orange-50 px-1.5 py-0.5 rounded-md">
                                   {property.currency || '₹'} {room.rackRate.toLocaleString()}
                                 </span>
                               )}
                             </div>
                           </div>
                         </div>
-                        {isExpanded ? (
-                          <ChevronUp className="w-4 h-4 text-gray-400" />
-                        ) : (
-                          <ChevronDown className="w-4 h-4 text-gray-400" />
+                      </div>
+
+                      {/* Room details (Always visible now) */}
+                      <div className="px-4 py-5 space-y-5">
+                        {/* Features */}
+                        {features.length > 0 && (
+                          <div>
+                            <span className="text-[10px] text-gray-400 uppercase font-bold block mb-2.5">
+                              Amenities
+                            </span>
+                            <div className="flex flex-wrap gap-2">
+                              {features.map((code) => {
+                                const { label, icon: FeatureIcon } = getFeatureLabel(code);
+                                return (
+                                  <span
+                                    key={code}
+                                    className="inline-flex items-center gap-1.5 text-xs text-gray-600 bg-gray-50 border border-gray-200 px-2.5 py-1.5 rounded-lg"
+                                  >
+                                    <FeatureIcon className="w-3 h-3 text-orange-400" />
+                                    {label}
+                                  </span>
+                                );
+                              })}
+                            </div>
+                          </div>
                         )}
-                      </button>
 
-                      {/* Room details (expanded) */}
-                      {isExpanded && (
-                        <div className="border-t border-gray-100 px-4 py-4 space-y-4 bg-gray-50/50">
-                          {/* Features */}
-                          {features.length > 0 && (
-                            <div>
-                              <span className="text-[10px] text-gray-400 uppercase font-bold block mb-2">
-                                Amenities
-                              </span>
-                              <div className="flex flex-wrap gap-2">
-                                {features.map((code) => {
-                                  const { label, icon: FeatureIcon } = getFeatureLabel(code);
-                                  return (
-                                    <span
-                                      key={code}
-                                      className="inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white border border-gray-200 px-2.5 py-1.5 rounded-lg"
-                                    >
-                                      <FeatureIcon className="w-3 h-3 text-orange-400" />
-                                      {label}
-                                    </span>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          )}
+                        {/* Room Description */}
+                        {roomTexts.roomDescription && (
+                          <div>
+                            <span className="text-[10px] text-gray-400 uppercase font-bold block mb-1.5">
+                              Description
+                            </span>
+                            <p className="text-sm text-gray-600 leading-relaxed">
+                              {roomTexts.roomDescription}
+                            </p>
+                          </div>
+                        )}
 
-                          {/* Room Description */}
-                          {roomTexts.roomDescription && (
-                            <div>
-                              <span className="text-[10px] text-gray-400 uppercase font-bold block mb-1">
-                                Description
-                              </span>
-                              <p className="text-sm text-gray-600 leading-relaxed">
-                                {roomTexts.roomDescription}
-                              </p>
-                            </div>
-                          )}
-
-                          {/* Room Images */}
-                          <div className="p-3 bg-white border border-gray-100 rounded-xl">
+                        {/* Room Images */}
+                        <div>
+                          <span className="text-[10px] text-gray-400 uppercase font-bold block mb-3">
+                            {room.name} Photos
+                          </span>
+                          <div className="p-4 bg-gray-50/50 border border-gray-100 rounded-2xl">
                             <ImageUploader
                               images={room.images || []}
                               onSave={(images) =>
@@ -396,11 +385,11 @@ const PropertyDetail = ({
                                 imageUpdateTarget?.propertyId === property.id &&
                                 imageUpdateTarget?.roomId === room.id
                               }
-                              label={`${room.name} Photos`}
+                              label="Room Images"
                             />
                           </div>
                         </div>
-                      )}
+                      </div>
                     </div>
                   );
                 })}
