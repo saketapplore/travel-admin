@@ -11,6 +11,18 @@ export default defineConfig({
       'react-dom': path.resolve('./node_modules/react-dom')
     }
   },
+  server: {
+    proxy: {
+      '/api': {
+        target: 'https://martha-insightful-genevie.ngrok-free.dev',
+        changeOrigin: true,
+        secure: false,
+        headers: {
+          'ngrok-skip-browser-warning': 'true'
+        }
+      }
+    }
+  },
   test: {
     globals: true,
     environment: 'jsdom',

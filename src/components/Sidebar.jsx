@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import {
   LogOut,
   Building2,
+  Hotel,
   User,
   ShieldCheck,
   CalendarDays,
@@ -29,6 +30,7 @@ const Sidebar = ({ activeSection, setActiveSection }) => {
 
   const menuItems = [
     { id: 'properties', label: 'Property Management', icon: <Building2 className="w-5 h-5" /> },
+    { id: 'stays', label: 'Stay Management', icon: <Hotel className="w-5 h-5" /> },
     { id: 'users', label: 'Admin Users', icon: <User className="w-5 h-5" /> },
     { id: 'roles', label: 'Roles & Permissions', icon: <ShieldCheck className="w-5 h-5" /> },
     { id: 'bookings', label: 'Booking Management', icon: <CalendarDays className="w-5 h-5" /> },

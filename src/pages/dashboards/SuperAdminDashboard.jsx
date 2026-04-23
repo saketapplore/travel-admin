@@ -12,6 +12,7 @@ import ReportingAnalytics from './components/ReportingAnalytics';
 import ActivityLogs from './components/ActivityLogs';
 import FAQs from './components/FAQs';
 import PlatformFee from './components/PlatformFee';
+import StayManagement from './components/StayManagement';
 
 const SuperAdminDashboard = () => {
   // Active Section State - Initialize from localStorage or default to 'properties'
@@ -38,6 +39,7 @@ const SuperAdminDashboard = () => {
         {activeSection === 'properties' && (
           <PropertyManagement propertyManagers={propertyManagers} />
         )}
+        {activeSection === 'stays' && <StayManagement />}
         {activeSection === 'admins' && <AdminAccounts />}
         {activeSection === 'users' && <AdminUsers />}
         {activeSection === 'roles' && <RolesPermissions />}

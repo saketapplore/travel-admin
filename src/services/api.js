@@ -20,7 +20,8 @@ const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'https://travel-rumours-api.applore.in/',
   timeout: 15000, // Slightly increased timeout for production reliability
   headers: {
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/json',
+    'ngrok-skip-browser-warning': 'true'
   }
 });
 

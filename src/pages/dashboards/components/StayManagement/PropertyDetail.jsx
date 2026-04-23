@@ -1,0 +1,437 @@
+import React, { useState } from 'react';
+import {
+  X,
+  MapPin,
+  Phone,
+  Mail,
+  Clock,
+  Users,
+  Wifi,
+  Wind,
+  CookingPot,
+  Shield,
+  CreditCard,
+  ChevronDown,
+  ChevronUp,
+  RefreshCw,
+  Info,
+  BedDouble,
+  Building2,
+  Globe,
+  FileText,
+  Compass,
+  Loader2,
+  AlertTriangle
+} from 'lucide-react';
+import ImageUploader from './ImageUploader';
+
+/**
+ * Maps feature codes to human-readable labels + icons
+ */
+const FEATURE_MAP = {
+  WIFI: { label: 'Wi-Fi', icon: Wifi },
+  AIR_CONDITIONING: { label: 'Air Conditioning', icon: Wind },
+  KITCHEN: { label: 'Kitchen', icon: CookingPot },
+  HEATING: { label: 'Heating', icon: Wind },
+  TV: { label: 'TV', icon: Globe },
+  PARKING: { label: 'Parking', icon: MapPin },
+};
+
+const getFeatureLabel = (code) => {
+  const feature = FEATURE_MAP[code];
+  if (feature) return feature;
+  // Fallback: humanize the code
+  return {
+    label: code.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+    icon: Info
+  };
+};
+
+/**
+ * PropertyDetail - Slide-in detail panel for a selected property
+ */
+const PropertyDetail = ({
+  property,
+  open,
+  onClose,
+  onSync,
+  syncing,
+  onUpdateImages,
+  updatingImages,
+  imageUpdateTarget
+}) => {
+  const [expandedRooms, setExpandedRooms] = useState({});
+
+  if (!property) return null;
+
+  const toggleRoom = (roomId) => {
+    setExpandedRooms((prev) => ({ ...prev, [roomId]: !prev[roomId] }));
+  };
+
+  const texts = property.texts?.[0] || {};
+  const bookingRules = property.bookingRules || {};
+  const paymentCollection = property.paymentCollection || {};
+  const cardSettings = property.cardSettings || {};
+  const depositInfo = paymentCollection.depositPayment1?.variableAmount || {};
+
+  const acceptedCards = [
+    cardSettings.cardAcceptVisa && 'Visa',
+    cardSettings.cardAcceptMaster && 'Mastercard',
+    cardSettings.cardAcceptAmex && 'Amex'
+  ].filter(Boolean);
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        className={`fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] transition-opacity duration-300 ${
+          open ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`}
+        onClick={onClose}
+      />
+
+      {/* Slide-in Panel */}
+      <div
+        className={`fixed top-0 right-0 h-full w-full max-w-2xl bg-white z-[70] shadow-2xl transition-transform duration-300 ease-out flex flex-col ${
+          open ? 'translate-x-0' : 'translate-x-full'
+        }`}
+      >
+        {/* Header */}
+        <div className="flex-shrink-0 bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-5">
+          <div className="flex items-start justify-between">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <span
+                  className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full ${
+                    property.isSynced
+                      ? 'bg-green-400/20 text-green-100'
+                      : 'bg-yellow-400/20 text-yellow-100'
+                  }`}
+                >
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full ${
+                      property.isSynced ? 'bg-green-300' : 'bg-yellow-300'
+                    }`}
+                  />
+                  {property.isSynced ? 'Synced' : 'Not Synced'}
+                </span>
+                <span className="text-xs text-white/60 capitalize">
+                  {property.propertyType || 'Property'}
+                </span>
+              </div>
+              <h2 className="text-xl font-bold text-white truncate">{property.name}</h2>
+              {property.city && (
+                <p className="text-white/80 text-sm flex items-center gap-1.5 mt-1">
+                  <MapPin className="w-3.5 h-3.5" />
+                  {property.address ? `${property.address}, ` : ''}
+                  {property.city}
+                </p>
+              )}
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-xl transition-colors flex-shrink-0 ml-3"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Quick actions */}
+          <div className="flex items-center gap-2 mt-4">
+            <button
+              onClick={() => onSync(property.id)}
+              disabled={syncing}
+              className="flex items-center gap-2 px-4 py-2 bg-white/15 hover:bg-white/25 text-white text-sm font-semibold rounded-xl transition-all disabled:opacity-50 border border-white/20"
+            >
+              {syncing ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <RefreshCw className="w-4 h-4" />
+              )}
+              {syncing ? 'Syncing...' : 'Sync Property'}
+            </button>
+            <span className="text-xs text-white/50 ml-2">ID: {property.id}</span>
+          </div>
+        </div>
+
+        {/* Image protection notice */}
+        <div className="flex-shrink-0 mx-6 mt-4 px-4 py-3 bg-blue-50 border border-blue-100 rounded-xl flex items-start gap-2.5">
+          <Shield className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
+          <p className="text-xs text-blue-700 leading-relaxed">
+            <span className="font-semibold">Image Protection:</span> Syncing metadata will{' '}
+            <span className="font-bold underline">NOT</span> delete your custom uploaded images. Only
+            address, rules, pricing, and occupancy data are overwritten.
+          </p>
+        </div>
+
+        {/* Scrollable content */}
+        <div className="flex-1 overflow-y-auto px-6 pb-8">
+          {/* Contact & Check-in Info */}
+          <section className="mt-5">
+            <div className="grid grid-cols-2 gap-3">
+              {property.phone && (
+                <div className="flex items-center gap-2 px-3 py-2.5 bg-gray-50 rounded-xl">
+                  <Phone className="w-4 h-4 text-gray-400" />
+                  <span className="text-sm text-gray-700">{property.phone}</span>
+                </div>
+              )}
+              {property.email && (
+                <div className="flex items-center gap-2 px-3 py-2.5 bg-gray-50 rounded-xl">
+                  <Mail className="w-4 h-4 text-gray-400" />
+                  <span className="text-sm text-gray-700 truncate">{property.email}</span>
+                </div>
+              )}
+              {property.checkInStart && (
+                <div className="flex items-center gap-2 px-3 py-2.5 bg-gray-50 rounded-xl">
+                  <Clock className="w-4 h-4 text-green-500" />
+                  <div>
+                    <span className="text-[10px] text-gray-400 uppercase font-bold block">Check-in</span>
+                    <span className="text-sm text-gray-700">
+                      {property.checkInStart} – {property.checkInEnd || 'Flexible'}
+                    </span>
+                  </div>
+                </div>
+              )}
+              {property.checkOutEnd && (
+                <div className="flex items-center gap-2 px-3 py-2.5 bg-gray-50 rounded-xl">
+                  <Clock className="w-4 h-4 text-red-400" />
+                  <div>
+                    <span className="text-[10px] text-gray-400 uppercase font-bold block">Check-out</span>
+                    <span className="text-sm text-gray-700">By {property.checkOutEnd}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </section>
+
+          {/* Booking Rules & Payment */}
+          <section className="mt-6">
+            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
+              Booking Rules & Payment
+            </h3>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="px-3 py-2.5 bg-gray-50 rounded-xl">
+                <span className="text-[10px] text-gray-400 uppercase font-bold block">Booking Type</span>
+                <span className="text-sm text-gray-700 capitalize">
+                  {bookingRules.bookingType?.replace(/([A-Z])/g, ' $1') || 'N/A'}
+                </span>
+              </div>
+              <div className="px-3 py-2.5 bg-gray-50 rounded-xl">
+                <span className="text-[10px] text-gray-400 uppercase font-bold block">Cancellation</span>
+                <span className="text-sm text-gray-700 capitalize">
+                  {bookingRules.allowGuestCancellation?.type || 'N/A'}
+                </span>
+              </div>
+              <div className="px-3 py-2.5 bg-gray-50 rounded-xl">
+                <span className="text-[10px] text-gray-400 uppercase font-bold block">Deposit</span>
+                <span className="text-sm text-gray-700">
+                  {depositInfo.percentageValue
+                    ? `${depositInfo.percentageValue}% (${depositInfo.type || 'percentage'})`
+                    : 'N/A'}
+                </span>
+              </div>
+              <div className="px-3 py-2.5 bg-gray-50 rounded-xl">
+                <span className="text-[10px] text-gray-400 uppercase font-bold block">VAT Rate</span>
+                <span className="text-sm text-gray-700">
+                  {bookingRules.vatRatePercentage != null
+                    ? `${bookingRules.vatRatePercentage}%`
+                    : 'N/A'}
+                </span>
+              </div>
+              {acceptedCards.length > 0 && (
+                <div className="col-span-2 px-3 py-2.5 bg-gray-50 rounded-xl flex items-center gap-2">
+                  <CreditCard className="w-4 h-4 text-gray-400" />
+                  <span className="text-sm text-gray-700">
+                    Accepted: {acceptedCards.join(', ')}
+                  </span>
+                </div>
+              )}
+            </div>
+          </section>
+
+          {/* Policies & Directions */}
+          {(texts.generalPolicy || texts.directions) && (
+            <section className="mt-6">
+              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
+                Policies & Directions
+              </h3>
+              {texts.generalPolicy && (
+                <div className="mb-3 px-4 py-3 bg-amber-50 border border-amber-100 rounded-xl">
+                  <div className="flex items-center gap-2 mb-1">
+                    <FileText className="w-3.5 h-3.5 text-amber-600" />
+                    <span className="text-xs font-bold text-amber-700 uppercase">House Rules</span>
+                  </div>
+                  <p className="text-sm text-amber-800 leading-relaxed">{texts.generalPolicy}</p>
+                </div>
+              )}
+              {texts.directions && (
+                <div className="px-4 py-3 bg-blue-50 border border-blue-100 rounded-xl">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Compass className="w-3.5 h-3.5 text-blue-600" />
+                    <span className="text-xs font-bold text-blue-700 uppercase">Directions</span>
+                  </div>
+                  <p className="text-sm text-blue-800 leading-relaxed">{texts.directions}</p>
+                </div>
+              )}
+            </section>
+          )}
+
+          {/* Property Images */}
+          <section className="mt-6">
+            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
+              Property Images
+            </h3>
+            <div className="p-4 bg-gray-50/80 border border-gray-100 rounded-2xl">
+              <ImageUploader
+                images={property.images || []}
+                onSave={(images) => onUpdateImages(property.id, images)}
+                saving={
+                  updatingImages &&
+                  imageUpdateTarget?.propertyId === property.id &&
+                  !imageUpdateTarget?.roomId
+                }
+                label="Property Photos"
+              />
+            </div>
+          </section>
+
+          {/* Room Types */}
+          {property.roomTypes && property.roomTypes.length > 0 && (
+            <section className="mt-6">
+              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
+                Room Types ({property.roomTypes.length})
+              </h3>
+              <div className="space-y-3">
+                {property.roomTypes.map((room) => {
+                  const isExpanded = expandedRooms[room.id];
+                  const roomTexts = room.texts?.[0] || {};
+                  // Flatten feature codes
+                  const features = (room.featureCodes || [])
+                    .flat()
+                    .filter((code) => typeof code === 'string');
+
+                  return (
+                    <div
+                      key={room.id}
+                      className="border border-gray-200 rounded-2xl overflow-hidden bg-white"
+                    >
+                      {/* Room header (always visible) */}
+                      <button
+                        onClick={() => toggleRoom(room.id)}
+                        className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="flex items-center gap-3 text-left">
+                          <div className="p-2 bg-orange-50 rounded-xl">
+                            <BedDouble className="w-5 h-5 text-orange-500" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-semibold text-gray-800">{room.name}</p>
+                            <div className="flex items-center gap-3 text-xs text-gray-500 mt-0.5">
+                              <span className="flex items-center gap-1">
+                                <Users className="w-3 h-3" /> Max {room.maxPeople || 'N/A'}
+                              </span>
+                              <span>Qty: {room.qty || 1}</span>
+                              {room.rackRate && (
+                                <span className="text-orange-600 font-semibold">
+                                  {property.currency || '₹'} {room.rackRate.toLocaleString()}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        {isExpanded ? (
+                          <ChevronUp className="w-4 h-4 text-gray-400" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4 text-gray-400" />
+                        )}
+                      </button>
+
+                      {/* Room details (expanded) */}
+                      {isExpanded && (
+                        <div className="border-t border-gray-100 px-4 py-4 space-y-4 bg-gray-50/50">
+                          {/* Features */}
+                          {features.length > 0 && (
+                            <div>
+                              <span className="text-[10px] text-gray-400 uppercase font-bold block mb-2">
+                                Amenities
+                              </span>
+                              <div className="flex flex-wrap gap-2">
+                                {features.map((code) => {
+                                  const { label, icon: FeatureIcon } = getFeatureLabel(code);
+                                  return (
+                                    <span
+                                      key={code}
+                                      className="inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white border border-gray-200 px-2.5 py-1.5 rounded-lg"
+                                    >
+                                      <FeatureIcon className="w-3 h-3 text-orange-400" />
+                                      {label}
+                                    </span>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Room Description */}
+                          {roomTexts.roomDescription && (
+                            <div>
+                              <span className="text-[10px] text-gray-400 uppercase font-bold block mb-1">
+                                Description
+                              </span>
+                              <p className="text-sm text-gray-600 leading-relaxed">
+                                {roomTexts.roomDescription}
+                              </p>
+                            </div>
+                          )}
+
+                          {/* Room Images */}
+                          <div className="p-3 bg-white border border-gray-100 rounded-xl">
+                            <ImageUploader
+                              images={room.images || []}
+                              onSave={(images) =>
+                                onUpdateImages(property.id, images, room.id)
+                              }
+                              saving={
+                                updatingImages &&
+                                imageUpdateTarget?.propertyId === property.id &&
+                                imageUpdateTarget?.roomId === room.id
+                              }
+                              label={`${room.name} Photos`}
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
+          {/* Coordinates */}
+          {property.latitude && property.longitude && (
+            <section className="mt-6 mb-4">
+              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
+                Location
+              </h3>
+              <div className="px-3 py-2.5 bg-gray-50 rounded-xl flex items-center gap-2 text-sm text-gray-600">
+                <Globe className="w-4 h-4 text-gray-400" />
+                {property.latitude.toFixed(6)}, {property.longitude.toFixed(6)}
+                <a
+                  href={`https://www.google.com/maps?q=${property.latitude},${property.longitude}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ml-auto text-xs text-orange-500 hover:text-orange-600 font-semibold"
+                >
+                  Open in Maps →
+                </a>
+              </div>
+            </section>
+          )}
+        </div>
+      </div>
+    </>
+  );
+};
+
+export default PropertyDetail;

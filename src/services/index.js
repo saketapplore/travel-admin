@@ -16,6 +16,7 @@ export { staffService } from './staffService';
 export { discountService } from './discountService';
 export { activityLogService } from './activityLogService';
 export { reportingService } from './reportingService';
+export { trStaysService } from './trStaysService';
 
 // Export the base API instance as well
 export { default as api } from './api';
