@@ -29,7 +29,7 @@ const Sidebar = ({ activeSection, setActiveSection }) => {
   const platformFeeImageIcon = '/src/assets/platform-fee.png';
 
   const menuItems = [
-    { id: 'properties', label: 'Property Management', icon: <Building2 className="w-5 h-5" /> },
+    // { id: 'properties', label: 'Property Management', icon: <Building2 className="w-5 h-5" /> },
     { id: 'stays', label: 'Stay Management', icon: <Hotel className="w-5 h-5" /> },
     { id: 'users', label: 'Admin Users', icon: <User className="w-5 h-5" /> },
     { id: 'roles', label: 'Roles & Permissions', icon: <ShieldCheck className="w-5 h-5" /> },
