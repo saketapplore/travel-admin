@@ -1,9 +1,19 @@
 import React, { useState } from 'react';
 import { EditIcon, DeleteIcon } from '@/components/icons';
 import { Ticket, Package } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
 
 const DiscountsPackages = () => {
+  const { user } = useAuth();
   const [discountsSubSection, setDiscountsSubSection] = useState('discounts');
+
+  const isSuperAdmin = user?.role === 'Super Admin' || user?.roleKey === 'super-admin';
+  const hasPermission = (module, action) => isSuperAdmin || user?.permissions?.[module]?.[action] === true;
+
+  const canCreate = hasPermission('discounts', 'create');
+  const canEdit = hasPermission('discounts', 'edit');
+  const canDelete = hasPermission('discounts', 'delete');
 
   
   const [discounts, setDiscounts] = useState([
@@ -86,6 +96,7 @@ const DiscountsPackages = () => {
     validTo: '',
     status: 'Active'
   });
+  const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, type: 'danger', title: '', message: '', onConfirm: () => {} });
 
   const handleAddDiscount = () => {
     setEditingDiscount(null);
@@ -122,9 +133,7 @@ const DiscountsPackages = () => {
   };
 
   const handleDeleteDiscount = (id) => {
-    if (window.confirm('Are you sure you want to delete this discount code?')) {
-      setDiscounts(discounts.filter(d => d.id !== id));
-    }
+    setDiscounts(discounts.filter(d => d.id !== id));
   };
 
   const handleDiscountSubmit = (e) => {
@@ -178,9 +187,7 @@ const DiscountsPackages = () => {
   };
 
   const handleDeletePackage = (id) => {
-    if (window.confirm('Are you sure you want to delete this package?')) {
-      setPackages(packages.filter(p => p.id !== id));
-    }
+    setPackages(packages.filter(p => p.id !== id));
   };
 
   const handlePackageSubmit = (e) => {
@@ -236,12 +243,14 @@ const DiscountsPackages = () => {
         <>
         <div className="flex justify-between items-center mb-6">
           <h4 className="text-lg font-semibold text-gray-800">Discount Codes</h4>
-          <button
-            onClick={handleAddDiscount}
-            className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg font-semibold transition duration-200 shadow-md"
-          >
-            + Create Discount Code
-          </button>
+          {canCreate && (
+            <button
+              onClick={handleAddDiscount}
+              className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg font-semibold transition duration-200 shadow-md"
+            >
+              + Create Discount Code
+            </button>
+          )}
         </div>
 
         <div className="overflow-x-auto">
@@ -281,18 +290,31 @@ const DiscountsPackages = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                    <button
-                      onClick={() => handleEditDiscount(discount)}
-                      className="text-blue-600 hover:text-blue-900"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDeleteDiscount(discount.id)}
-                      className="text-red-600 hover:text-red-900"
-                    >
-                      Delete
-                    </button>
+                    {canEdit && (
+                      <button
+                        onClick={() => handleEditDiscount(discount)}
+                        className="text-blue-600 hover:text-blue-900"
+                      >
+                        Edit
+                      </button>
+                    )}
+                    {canDelete && (
+                      <button
+                        onClick={() => setConfirmDialog({
+                          isOpen: true,
+                          type: 'danger',
+                          title: 'Delete Discount?',
+                          message: 'Are you sure you want to delete this discount code? This action cannot be undone.',
+                          onConfirm: () => {
+                            handleDeleteDiscount(discount.id);
+                            setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+                          }
+                        })}
+                        className="text-red-600 hover:text-red-900"
+                      >
+                        Delete
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -307,12 +329,14 @@ const DiscountsPackages = () => {
         <>
         <div className="flex justify-between items-center mb-6">
           <h4 className="text-lg font-semibold text-gray-800">Custom Packages</h4>
-          <button
-            onClick={handleAddPackage}
-            className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg font-semibold transition duration-200 shadow-md"
-          >
-            + Create Package
-          </button>
+          {canCreate && (
+            <button
+              onClick={handleAddPackage}
+              className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg font-semibold transition duration-200 shadow-md"
+            >
+              + Create Package
+            </button>
+          )}
         </div>
 
         <div className="overflow-x-auto -mx-6 px-6">
@@ -353,20 +377,33 @@ const DiscountsPackages = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex items-center space-x-3">
-                      <button
-                        onClick={() => handleEditPackage(pkg)}
-                        className="p-2 text-blue-600 hover:text-blue-900 hover:bg-blue-50 rounded-lg transition-colors"
-                        title="Edit"
-                      >
-                        <EditIcon className="w-5 h-5" />
-                      </button>
-                      <button
-                        onClick={() => handleDeletePackage(pkg.id)}
-                        className="p-2 text-red-600 hover:text-red-900 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Delete"
-                      >
-                        <DeleteIcon className="w-5 h-5" />
-                      </button>
+                      {canEdit && (
+                        <button
+                          onClick={() => handleEditPackage(pkg)}
+                          className="p-2 text-blue-600 hover:text-blue-900 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="Edit"
+                        >
+                          <EditIcon className="w-5 h-5" />
+                        </button>
+                      )}
+                      {canDelete && (
+                        <button
+                          onClick={() => setConfirmDialog({
+                            isOpen: true,
+                            type: 'danger',
+                            title: 'Delete Package?',
+                            message: 'Are you sure you want to delete this custom package? This action cannot be undone.',
+                            onConfirm: () => {
+                              handleDeletePackage(pkg.id);
+                              setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+                            }
+                          })}
+                          className="p-2 text-red-600 hover:text-red-900 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Delete"
+                        >
+                          <DeleteIcon className="w-5 h-5" />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -645,6 +682,15 @@ const DiscountsPackages = () => {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        type={confirmDialog.type}
+        onConfirm={confirmDialog.onConfirm}
+        onCancel={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
+      />
     </>
   );
 };

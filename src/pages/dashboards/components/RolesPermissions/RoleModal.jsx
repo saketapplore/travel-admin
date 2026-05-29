@@ -1,73 +1,79 @@
 import React, { useState, useEffect } from 'react';
 import { roleService } from '@/services/roleService';
 
-const RoleModal = ({ isOpen, onClose, onRoleSaved, editingRole, availablePermissions }) => {
-  const [form, setForm] = useState({ name: '', description: '', permissions: [] });
+const RoleModal = ({ isOpen, onClose, onRoleSaved, editingRole }) => {
+  const [form, setForm] = useState({
+    name: '',
+    description: '',
+    permissions: {
+      view: true,
+      create: false,
+      edit: false,
+      delete: false,
+    },
+  });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const [searchTerm, setSearchTerm] = useState('');
-
   useEffect(() => {
     if (editingRole) {
-      const perms = (editingRole.permissions || editingRole.permissionIds || []).map((p) =>
-        typeof p === 'string' ? p : p._id || p.id
-      );
+      // Handle legacy array format or missing permissions
+      let perms = editingRole.permissions;
+      if (Array.isArray(perms) || !perms || typeof perms !== 'object') {
+        perms = {
+          view: true,
+          create: false,
+          edit: false,
+          delete: false,
+        };
+      }
+      
       setForm({
-        name: editingRole.name || editingRole.roleName || '',
+        name: editingRole.name || '',
         description: editingRole.description || '',
-        permissions: perms
+        permissions: perms,
       });
     } else {
-      setForm({ name: '', description: '', permissions: [] });
+      setForm({
+        name: '',
+        description: '',
+        permissions: {
+          view: true,
+          create: false,
+          edit: false,
+          delete: false,
+        },
+      });
     }
-    setSearchTerm('');
   }, [editingRole, isOpen]);
 
   if (!isOpen) return null;
 
-  const handleTogglePermission = (id) => {
+  const handlePermissionChange = (key) => {
     setForm((prev) => {
-      const isSelected = prev.permissions.includes(id);
-      return {
-        ...prev,
-        permissions: isSelected
-          ? prev.permissions.filter((p) => p !== id)
-          : [...prev.permissions, id]
-      };
+      const newPermissions = { ...prev.permissions, [key]: !prev.permissions[key] };
+      
+      // Validation: Cannot allow Create/Edit/Delete if View is false
+      // If we enable any action, view must be true
+      if (key !== 'view' && newPermissions[key]) {
+        newPermissions.view = true;
+      }
+      
+      // If we disable view, all other actions must be disabled
+      if (key === 'view' && !newPermissions.view) {
+        newPermissions.create = false;
+        newPermissions.edit = false;
+        newPermissions.delete = false;
+      }
+
+      return { ...prev, permissions: newPermissions };
     });
   };
-
-  const handleToggleAll = () => {
-    setForm((prev) => {
-      const allIds = availablePermissions.map((p) => p._id || p.id);
-      const isAllSelected = prev.permissions.length === allIds.length;
-      return {
-        ...prev,
-        permissions: isAllSelected ? [] : allIds
-      };
-    });
-  };
-
-  const filteredPermissions = availablePermissions.filter((perm) => {
-    const label = (
-      perm.name ||
-      perm.permissionName ||
-      perm.displayName ||
-      perm.title ||
-      ''
-    ).toLowerCase();
-    return label.includes(searchTerm.toLowerCase());
-  });
-
-  const getPermissionLabel = (perm) =>
-    perm.name || perm.permissionName || perm.displayName || perm.title || 'N/A';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     if (!form.name.trim()) return setError('Role name is required');
-    if (form.permissions.length === 0) return setError('At least one permission is required');
 
     setLoading(true);
     try {
@@ -91,126 +97,99 @@ const RoleModal = ({ isOpen, onClose, onRoleSaved, editingRole, availablePermiss
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-lg p-8 max-w-2xl w-full mx-4 my-8 max-h-[90vh] flex flex-col"
+        className="bg-white rounded-3xl p-10 max-w-lg w-full mx-4 my-8 shadow-2xl flex flex-col border border-white/20 backdrop-blur-sm"
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 className="text-2xl font-bold mb-6 flex-shrink-0">
+        <h3 className="text-3xl font-black text-gray-800 mb-8 flex-shrink-0 tracking-tight">
           {editingRole ? 'Edit Role' : 'Add Role'}
         </h3>
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto pr-2">
-          <div className="space-y-4">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+          <div className="space-y-8">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-3 ml-1">
                 Role Name <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 transition-all"
+                className="w-full px-6 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 transition-all outline-none font-bold text-gray-700"
+                placeholder="e.g. Manager"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+              <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-3 ml-1">Description</label>
               <textarea
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 transition-all"
+                className="w-full px-6 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 transition-all outline-none font-medium text-gray-600"
                 rows="3"
+                placeholder="Briefly describe the role responsibilities..."
               />
             </div>
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-sm font-medium text-gray-700">
-                  Permissions <span className="text-red-500">*</span>
-                </label>
-                <div className="relative w-48">
-                  <input
-                    type="text"
-                    placeholder="Search permissions..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-8 pr-3 py-1 text-xs border border-gray-300 rounded-lg focus:ring-1 focus:ring-orange-500 outline-none"
-                  />
-                  <svg
-                    className="w-4 h-4 text-gray-400 absolute left-2.5 top-1/2 -translate-y-1/2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+            
+            <div className="pt-4 border-t border-gray-100">
+              <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-6 ml-1">
+                Global Permissions
+              </label>
+              
+              <div className="grid grid-cols-2 gap-4">
+                {Object.keys(form.permissions).map((key) => (
+                  <label
+                    key={key}
+                    className={`flex items-center justify-between p-5 rounded-2xl border-2 transition-all cursor-pointer group ${
+                      form.permissions[key] 
+                        ? 'bg-orange-50 border-orange-500' 
+                        : 'bg-white border-gray-100 hover:border-gray-200'
+                    }`}
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                    />
-                  </svg>
-                </div>
-              </div>
-
-              <div className="border border-gray-300 rounded-xl overflow-hidden flex flex-col h-72 shadow-sm bg-gray-50/30">
-                <div className="bg-gray-100/80 px-4 py-2.5 border-b flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
-                    PERMISSION
-                  </span>
-                  <button
-                    type="button"
-                    onClick={handleToggleAll}
-                    className="text-xs font-bold text-orange-600 hover:text-orange-700 transition-colors"
-                  >
-                    {form.permissions.length === availablePermissions.length
-                      ? 'Deselect All'
-                      : 'Select All'}
-                  </button>
-                </div>
-                <div className="flex-1 overflow-y-auto divide-y divide-gray-100 bg-white">
-                  {filteredPermissions.length > 0 ? (
-                    filteredPermissions.map((perm) => (
-                      <label
-                        key={perm._id || perm.id}
-                        className="flex items-center space-x-3 p-3 hover:bg-orange-50/50 cursor-pointer transition-colors group"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={form.permissions.includes(perm._id || perm.id)}
-                          onChange={() => handleTogglePermission(perm._id || perm.id)}
-                          className="w-4.5 h-4.5 text-orange-500 border-gray-300 rounded focus:ring-orange-500 transition-all cursor-pointer"
-                        />
-                        <span className="text-sm font-bold text-gray-900 group-hover:text-orange-700 transition-colors">
-                          {getPermissionLabel(perm)}
-                        </span>
-                      </label>
-                    ))
-                  ) : (
-                    <div className="p-8 text-center text-sm text-gray-500 italic">
-                      No permissions match your search.
+                    <div className="flex flex-col">
+                      <span className={`text-sm font-black uppercase tracking-tight transition-colors ${
+                        form.permissions[key] ? 'text-orange-600' : 'text-gray-600'
+                      }`}>
+                        {key}
+                      </span>
+                      <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                        {key === 'view' ? 'Access everything' : `Can ${key} data`}
+                      </span>
                     </div>
-                  )}
-                </div>
-                <div className="bg-gray-50 px-4 py-2 border-t text-[10px] font-medium text-gray-400">
-                  {form.permissions.length} of {availablePermissions.length} selected
-                </div>
+                    <div className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={form.permissions[key]}
+                        onChange={() => handlePermissionChange(key)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
+                    </div>
+                  </label>
+                ))}
               </div>
             </div>
+
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded text-sm">
+              <div className="bg-red-50 border border-red-100 text-red-600 px-6 py-4 rounded-2xl text-sm font-bold flex items-center gap-3">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
                 {error}
               </div>
             )}
           </div>
-          <div className="flex space-x-3 mt-6 flex-shrink-0">
+          
+          <div className="flex gap-4 mt-12 flex-shrink-0">
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 bg-orange-500 hover:bg-orange-600 text-white py-2.5 rounded-2xl font-bold transition-all shadow-md active:scale-95"
+              className="flex-[2] bg-orange-500 hover:bg-orange-600 text-white py-5 rounded-2xl font-black transition-all shadow-lg shadow-orange-500/30 active:scale-95 disabled:opacity-50 text-lg tracking-tight"
             >
               {loading ? 'Saving...' : editingRole ? 'Update Role' : 'Create Role'}
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2.5 rounded-2xl font-bold transition-all"
+              className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-500 py-5 rounded-2xl font-black transition-all active:scale-95 text-lg tracking-tight"
             >
               Cancel
             </button>

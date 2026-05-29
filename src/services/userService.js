@@ -17,7 +17,8 @@ export const userService = {
   update: (data) => api.put('/users/profile', data),
   activate: (id) => api.put(`/users/activate/${id}`),
   deactivate: (id) => api.put(`/users/deactivate/${id}`),
-  manage: (id, data) => api.put(`/users/manage/${id}`, data)
+  manage: (id, data) => api.put(`/users/manage/${id}`, data),
+  delete: (id) => api.delete(`/users/${id}`)
 };
 
 export default userService;

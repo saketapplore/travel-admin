@@ -1,48 +1,28 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { authService } from '../services/authService';
 
 const AuthContext = createContext(null);
 
-// Role configurations
-const ROLE_CONFIGS = {
-  'property-manager': {
-    role: 'Property Manager',
-    description: 'Can manage property details, availability, and bookings assigned to them'
-  },
-  'booking-manager': {
-    role: 'Booking Manager',
-    description: 'Can view and manage booking requests, confirmations, cancellations, and payments'
-  },
-  'staff-manager': {
-    role: 'Staff Manager',
-    description: 'Can onboard staff members, assign bookings, and manage staff roles'
-  }
-};
-
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [userAccounts, setUserAccounts] = useState([]);
 
   useEffect(() => {
-    // Check if user is already logged in
     const savedUser = localStorage.getItem('adminUser');
     if (savedUser) {
-      setUser(JSON.parse(savedUser));
+      try {
+        const parsedUser = JSON.parse(savedUser);
+        setUser(parsedUser);
+      } catch (e) {
+        console.error('Error parsing saved user:', e);
+        localStorage.removeItem('adminUser');
+      }
     }
-
-    // Load user accounts from localStorage
-    const savedAccounts = localStorage.getItem('userAccounts');
-    if (savedAccounts) {
-      setUserAccounts(JSON.parse(savedAccounts));
-    }
-
     setLoading(false);
   }, []);
 
   const login = async (email, password) => {
     try {
-      // Use API authentication only
       const response = await authService.login({
         email: email.trim(),
         password: password
@@ -51,73 +31,22 @@ export const AuthProvider = ({ children }) => {
       const data = response.data;
 
       if (data && response.status === 200) {
-        // Extract token from various possible response structures
-        const token =
-          data.token || data.access_token || data?.data?.token || data?.data?.access_token;
-
-        // Extract user data from various possible response structures
+        const token = data.token || data.access_token || data?.data?.token || data?.data?.access_token;
         const userFromApi = data.user || data?.data?.user || data?.admin || data || {};
 
-        // Extract role and normalize it
-        // Handle role as string or object
-        let role = userFromApi.role || data.role || 'Super Admin';
-        let roleKey = userFromApi.roleKey || data.roleKey;
-
-        // If role is an object, extract the name property
-        if (role && typeof role === 'object' && role !== null) {
-          role = role.name || role.roleName || role.role || 'Super Admin';
-        }
-
-        // Ensure role is a string
-        if (typeof role !== 'string') {
-          role = String(role || 'Super Admin');
-        }
-
-        // If roleKey is not provided, derive it from role
-        if (!roleKey) {
-          // Normalize role string to roleKey format
-          const normalizedRole = role.toLowerCase().trim();
-          if (normalizedRole.includes('super') || normalizedRole.includes('admin')) {
-            roleKey = 'super-admin';
-            role = 'Super Admin';
-          } else if (normalizedRole.includes('property')) {
-            roleKey = 'property-manager';
-            role = 'Property Manager';
-          } else if (normalizedRole.includes('booking')) {
-            roleKey = 'booking-manager';
-            role = 'Booking Manager';
-          } else if (normalizedRole.includes('staff')) {
-            roleKey = 'staff-manager';
-            role = 'Staff Manager';
-          } else {
-            // Default to super-admin for API logins
-            roleKey = 'super-admin';
-            role = 'Super Admin';
-          }
-        }
-
-        // Build user data object
+        const role = userFromApi.role || 'Staff';
+        const roleName = typeof role === 'object' ? role.name : role;
+        
         const userData = {
+          id: userFromApi.id || userFromApi._id || data.id || data._id,
           email: userFromApi.email || data.email || email.trim(),
+          name: userFromApi.name || userFromApi.fullName || data.name || data.fullName || email.split('@')[0],
           role: role,
-          roleKey: roleKey,
-          description:
-            userFromApi.description ||
-            data.description ||
-            'Can create, edit, and delete admin accounts and assign roles/permissions',
-          name:
-            userFromApi.name ||
-            userFromApi.fullName ||
-            data.name ||
-            data.fullName ||
-            email.split('@')[0],
+          roleKey: roleName?.toLowerCase()?.replace(/\s+/g, '-') || 'staff',
+          modules: userFromApi.modules || {},
           token: token,
-          apiAuth: true,
-          id: userFromApi.id || userFromApi._id || data.id || data._id
+          apiAuth: true
         };
-
-        // Log for debugging (remove in production)
-        console.log('Login successful - User data:', userData);
 
         setUser(userData);
         localStorage.setItem('adminUser', JSON.stringify(userData));
@@ -127,75 +56,11 @@ export const AuthProvider = ({ children }) => {
       return { success: false, message: 'Invalid email or password' };
     } catch (error) {
       console.error('Login error:', error);
-
-      // Extract error message from API response
-      const errorMessage =
-        error.response?.data?.message ||
-        error.response?.data?.error ||
-        error.message ||
-        'Invalid email or password. Please try again.';
-
       return {
         success: false,
-        message: errorMessage
+        message: error.response?.data?.message || 'Invalid email or password. Please try again.'
       };
     }
-  };
-
-  const createAccount = (accountData) => {
-    const normalizedEmail = accountData.email.toLowerCase().trim();
-
-    // Check if email already exists
-    const emailExists = userAccounts.find((acc) => acc.email.toLowerCase() === normalizedEmail);
-    if (emailExists) {
-      return { success: false, message: 'An account with this email already exists' };
-    }
-
-    const roleConfig = ROLE_CONFIGS[accountData.roleKey];
-    if (!roleConfig) {
-      return { success: false, message: 'Invalid role selected' };
-    }
-
-    const newAccount = {
-      id: Date.now(),
-      name: accountData.name,
-      email: accountData.email,
-      password: accountData.password,
-      role: roleConfig.role,
-      roleKey: accountData.roleKey,
-      description: roleConfig.description,
-      status: 'Active',
-      createdAt: new Date().toISOString()
-    };
-
-    const updatedAccounts = [...userAccounts, newAccount];
-    setUserAccounts(updatedAccounts);
-    localStorage.setItem('userAccounts', JSON.stringify(updatedAccounts));
-
-    return { success: true, account: newAccount };
-  };
-
-  const updateAccount = (id, updates) => {
-    const updatedAccounts = userAccounts.map((acc) => {
-      if (acc.id === id) {
-        return { ...acc, ...updates };
-      }
-      return acc;
-    });
-    setUserAccounts(updatedAccounts);
-    localStorage.setItem('userAccounts', JSON.stringify(updatedAccounts));
-    return { success: true };
-  };
-
-  const deleteAccount = (id) => {
-    const updatedAccounts = userAccounts.filter((acc) => acc.id !== id);
-    setUserAccounts(updatedAccounts);
-    localStorage.setItem('userAccounts', JSON.stringify(updatedAccounts));
-    return { success: true };
-  };
-
-  const getAllAccounts = () => {
-    return userAccounts;
   };
 
   const refreshUser = async () => {
@@ -204,89 +69,38 @@ export const AuthProvider = ({ children }) => {
       const data = response.data;
 
       if (data && response.status === 200) {
-        // Extract user data from various possible response structures
         const userFromApi = data.user || data?.data?.user || data?.admin || data || {};
-
-        // Extract role and normalize it
-        // Handle role as string or object
-        let role = userFromApi.role || data.role || 'Super Admin';
-        let roleKey = userFromApi.roleKey || data.roleKey;
-
-        // If role is an object, extract the name property
-        if (role && typeof role === 'object' && role !== null) {
-          role = role.name || role.roleName || role.role || 'Super Admin';
-        }
-
-        // Ensure role is a string
-        if (typeof role !== 'string') {
-          role = String(role || 'Super Admin');
-        }
-
-        // If roleKey is not provided, derive it from role
-        if (!roleKey) {
-          const normalizedRole = role.toLowerCase().trim();
-          if (normalizedRole.includes('super') || normalizedRole.includes('admin')) {
-            roleKey = 'super-admin';
-            role = 'Super Admin';
-          } else if (normalizedRole.includes('property')) {
-            roleKey = 'property-manager';
-            role = 'Property Manager';
-          } else if (normalizedRole.includes('booking')) {
-            roleKey = 'booking-manager';
-            role = 'Booking Manager';
-          } else if (normalizedRole.includes('staff')) {
-            roleKey = 'staff-manager';
-            role = 'Staff Manager';
-          } else {
-            roleKey = 'super-admin';
-            role = 'Super Admin';
-          }
-        }
-
-        // Get existing token from localStorage
+        
         const savedUser = localStorage.getItem('adminUser');
         let existingToken = null;
         if (savedUser) {
           try {
-            const existingUserData = JSON.parse(savedUser);
-            existingToken = existingUserData.token;
-          } catch (e) {
-            console.error('Error parsing existing user data:', e);
-          }
+            existingToken = JSON.parse(savedUser).token;
+          } catch (e) {}
         }
 
-        // Build updated user data object
+        const role = userFromApi.role || 'Staff';
+        const roleName = typeof role === 'object' ? role.name : role;
+
         const userData = {
-          email: userFromApi.email || data.email || user?.email,
+          id: userFromApi.id || userFromApi._id,
+          email: userFromApi.email,
+          name: userFromApi.name,
           role: role,
-          roleKey: roleKey,
-          description:
-            userFromApi.description ||
-            data.description ||
-            user?.description ||
-            'Can create, edit, and delete admin accounts and assign roles/permissions',
-          name:
-            userFromApi.name || userFromApi.fullName || data.name || data.fullName || user?.name,
-          token: existingToken || user?.token, // Keep existing token
-          apiAuth: true,
-          id: userFromApi.id || userFromApi._id || data.id || data._id || user?.id
+          roleKey: roleName?.toLowerCase()?.replace(/\s+/g, '-') || 'staff',
+          modules: userFromApi.modules || {},
+          token: existingToken || user?.token,
+          apiAuth: true
         };
 
         setUser(userData);
         localStorage.setItem('adminUser', JSON.stringify(userData));
         return { success: true, user: userData };
       }
-
       return { success: false, message: 'Failed to refresh user data' };
     } catch (error) {
       console.error('Refresh user error:', error);
-
-      // If refresh fails, it might mean token is invalid
-      // Don't logout automatically, let the component handle it
-      return {
-        success: false,
-        message: error.response?.data?.message || error.message || 'Failed to refresh user data'
-      };
+      return { success: false, message: 'Failed to refresh user data' };
     }
   };
 
@@ -294,6 +108,37 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     localStorage.removeItem('adminUser');
   };
+
+  /**
+   * Centralized Permission Check helper for UI
+   * Logic: User can perform an action IF:
+   * 1. The module is assigned to the user
+   * AND
+   * 2. The role allows that action (view/create/edit/delete)
+   */
+  const canAccess = useCallback((module, action = 'view') => {
+    if (!user) return false;
+    
+    const roleName = user.role?.name || (typeof user.role === 'string' ? user.role : '');
+    if (roleName === 'Super Admin') return true;
+
+    // 1. Check User-Level Module Access
+    const hasModuleAccess = user.modules?.[module] === true;
+    if (!hasModuleAccess) return false;
+
+    // 2. Check Role-Level Action Permission
+    const rolePermissions = user.role?.permissions;
+    
+    // Legacy support: If 'view' isn't explicitly defined as a boolean, 
+    // it's an old array-based role. Assume it has basic view access
+    // so we don't lock out existing users before their roles are migrated
+    if (rolePermissions && typeof rolePermissions.view !== 'boolean') {
+      if (action === 'view') return true;
+      return false; // Can't definitively know edit/delete for legacy, deny by default
+    }
+
+    return (rolePermissions || {})[action] === true;
+  }, [user]);
 
   return (
     <AuthContext.Provider
@@ -303,11 +148,7 @@ export const AuthProvider = ({ children }) => {
         logout,
         loading,
         refreshUser,
-        createAccount,
-        updateAccount,
-        deleteAccount,
-        getAllAccounts,
-        userAccounts
+        canAccess
       }}
     >
       {children}

@@ -21,9 +21,14 @@ import {
   FileText,
   Compass,
   Loader2,
-  AlertTriangle
+  AlertTriangle,
+  Edit3,
+  Calendar
 } from 'lucide-react';
 import ImageUploader from './ImageUploader';
+import EditPropertyModal from './EditPropertyModal';
+import EditRoomModal from './EditRoomModal';
+import CalendarModal from './CalendarModal';
 
 /**
  * Maps feature codes to human-readable labels + icons
@@ -58,8 +63,16 @@ const PropertyDetail = ({
   syncing,
   onUpdateImages,
   updatingImages,
-  imageUpdateTarget
+  imageUpdateTarget,
+  onUpdatePropertyDetail,
+  onUpdateRoomDetail,
+  onUpdateRoomCalendar
 }) => {
+  const [propertyEditOpen, setPropertyEditOpen] = useState(false);
+  const [roomEditOpen, setRoomEditOpen] = useState(false);
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  const [activeRoomToEdit, setActiveRoomToEdit] = useState(null);
+
   if (!property) return null;
 
   const texts = property.texts?.[0] || {};
@@ -144,6 +157,15 @@ const PropertyDetail = ({
               )}
               {syncing ? 'Syncing...' : 'Sync Property'}
             </button>
+            {property.isSynced && (
+              <button
+                onClick={() => setPropertyEditOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-orange-700/30 hover:bg-orange-700/50 text-white text-sm font-semibold rounded-xl transition-all border border-white/20"
+              >
+                <Edit3 className="w-4 h-4" />
+                Edit Hotel Details
+              </button>
+            )}
             <span className="text-xs text-white/50 ml-2">ID: {property.id}</span>
           </div>
         </div>
@@ -290,14 +312,13 @@ const PropertyDetail = ({
           </section>
 
           {/* Room Types */}
-          {property.roomTypes && property.roomTypes.length > 0 && (
+          {property.roomTypes && property.roomTypes.length > 0 ? (
             <section className="mt-6">
               <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
                 Room Types ({property.roomTypes.length})
               </h3>
               <div className="space-y-3">
                 {property.roomTypes.map((room) => {
-                  const isExpanded = expandedRooms[room.id];
                   const roomTexts = room.texts?.[0] || {};
                   // Flatten feature codes
                   const features = (room.featureCodes || [])
@@ -330,29 +351,66 @@ const PropertyDetail = ({
                             </div>
                           </div>
                         </div>
+                        {property.isSynced && (
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              onClick={() => {
+                                setActiveRoomToEdit(room);
+                                setCalendarOpen(true);
+                              }}
+                              className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                              title="Manage Pricing & Availability"
+                            >
+                              <Calendar className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                setActiveRoomToEdit(room);
+                                setRoomEditOpen(true);
+                              }}
+                              className="p-2 text-gray-400 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-all"
+                              title="Edit Room Overrides"
+                            >
+                              <Edit3 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        )}
                       </div>
 
                       {/* Room details (Always visible now) */}
                       <div className="px-4 py-5 space-y-5">
-                        {/* Features */}
-                        {features.length > 0 && (
+                        {/* Features / Amenities */}
+                        {(room.amenities?.length > 0 || features.length > 0) && (
                           <div>
                             <span className="text-[10px] text-gray-400 uppercase font-bold block mb-2.5">
                               Amenities
                             </span>
                             <div className="flex flex-wrap gap-2">
-                              {features.map((code) => {
-                                const { label, icon: FeatureIcon } = getFeatureLabel(code);
-                                return (
+                              {/* Show custom amenities if they exist, otherwise fallback to feature codes */}
+                              {room.amenities?.length > 0 ? (
+                                room.amenities.map((amenity, idx) => (
                                   <span
-                                    key={code}
-                                    className="inline-flex items-center gap-1.5 text-xs text-gray-600 bg-gray-50 border border-gray-200 px-2.5 py-1.5 rounded-lg"
+                                    key={idx}
+                                    className="inline-flex items-center gap-1.5 text-xs text-orange-700 bg-orange-50 border border-orange-100 px-2.5 py-1.5 rounded-lg font-medium"
                                   >
-                                    <FeatureIcon className="w-3 h-3 text-orange-400" />
-                                    {label}
+                                    <Shield className="w-3 h-3 text-orange-400" />
+                                    {amenity}
                                   </span>
-                                );
-                              })}
+                                ))
+                              ) : (
+                                features.map((code) => {
+                                  const { label, icon: FeatureIcon } = getFeatureLabel(code);
+                                  return (
+                                    <span
+                                      key={code}
+                                      className="inline-flex items-center gap-1.5 text-xs text-gray-600 bg-gray-50 border border-gray-200 px-2.5 py-1.5 rounded-lg"
+                                    >
+                                      <FeatureIcon className="w-3 h-3 text-orange-400" />
+                                      {label}
+                                    </span>
+                                  );
+                                })
+                              )}
                             </div>
                           </div>
                         )}
@@ -395,6 +453,12 @@ const PropertyDetail = ({
                 })}
               </div>
             </section>
+          ) : property.isSynced && (
+            <section className="mt-6 p-8 border-2 border-dashed border-gray-100 rounded-2xl flex flex-col items-center justify-center text-center">
+               <BedDouble className="w-8 h-8 text-gray-200 mb-2" />
+               <p className="text-sm text-gray-400 font-medium">No Room Types found for this property.</p>
+               <p className="text-xs text-gray-400 mt-1">Try syncing again if you expect rooms to be here.</p>
+            </section>
           )}
 
           {/* Coordinates */}
@@ -418,6 +482,36 @@ const PropertyDetail = ({
             </section>
           )}
         </div>
+
+        {/* Modals */}
+        <EditPropertyModal
+          isOpen={propertyEditOpen}
+          onClose={() => setPropertyEditOpen(false)}
+          property={property}
+          onUpdate={onUpdatePropertyDetail}
+        />
+
+        <EditRoomModal
+          isOpen={roomEditOpen}
+          onClose={() => {
+            setRoomEditOpen(false);
+            setActiveRoomToEdit(null);
+          }}
+          room={property.roomTypes?.find(r => r.id === activeRoomToEdit?.id)}
+          property={property}
+          onUpdate={onUpdateRoomDetail}
+        />
+
+        <CalendarModal
+          isOpen={calendarOpen}
+          onClose={() => {
+            setCalendarOpen(false);
+            setActiveRoomToEdit(null);
+          }}
+          room={property.roomTypes?.find(r => r.id === activeRoomToEdit?.id)}
+          property={property}
+          onUpdate={onUpdateRoomCalendar}
+        />
       </div>
     </>
   );

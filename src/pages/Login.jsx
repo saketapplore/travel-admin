@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, XCircle } from 'lucide-react';
+import toast from 'react-hot-toast';
 import logo from '../assets/logo.png';
 import loginBg from '../assets/login-bg.png';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
@@ -23,17 +23,36 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
     setLoading(true);
 
     if (!email) {
-      setError('Please enter your email');
+      toast.error('Please enter your email', {
+        style: {
+          background: 'rgba(220, 38, 38, 0.4)',
+          backdropFilter: 'blur(10px)',
+          color: '#fff',
+          border: '1px solid rgba(255, 255, 255, 0.3)',
+          borderRadius: '1rem',
+          fontWeight: 'bold',
+        },
+        icon: <XCircle className="text-white w-6 h-6" />
+      });
       setLoading(false);
       return;
     }
 
     if (!password) {
-      setError('Please enter your password');
+      toast.error('Please enter your password', {
+        style: {
+          background: 'rgba(220, 38, 38, 0.4)',
+          backdropFilter: 'blur(10px)',
+          color: '#fff',
+          border: '1px solid rgba(255, 255, 255, 0.3)',
+          borderRadius: '1rem',
+          fontWeight: 'bold',
+        },
+        icon: <XCircle className="text-white w-6 h-6" />
+      });
       setLoading(false);
       return;
     }
@@ -42,12 +61,43 @@ const Login = () => {
       const result = await login(email, password);
 
       if (result.success) {
+        toast.success('Welcome back, Admin!', {
+          style: {
+            background: 'rgba(255, 255, 255, 0.2)',
+            backdropFilter: 'blur(10px)',
+            color: '#fff',
+            border: '1px solid rgba(255, 255, 255, 0.3)',
+            borderRadius: '1rem',
+            fontWeight: 'bold',
+          }
+        });
         navigate('/dashboard');
       } else {
-        setError(result.message);
+        toast.error('Invalid username or password', {
+          style: {
+            background: 'rgba(220, 38, 38, 0.5)',
+            backdropFilter: 'blur(10px)',
+            color: '#fff',
+            border: '1px solid rgba(255, 255, 255, 0.3)',
+            borderRadius: '1rem',
+            fontWeight: 'bold',
+          },
+          icon: <XCircle className="text-white w-6 h-6" />,
+          duration: 4000
+        });
       }
     } catch (err) {
-      setError('Login failed. Please try again.');
+      toast.error('Invalid username or password', {
+        style: {
+          background: 'rgba(220, 38, 38, 0.5)',
+          backdropFilter: 'blur(10px)',
+          color: '#fff',
+          border: '1px solid rgba(255, 255, 255, 0.3)',
+          borderRadius: '1rem',
+          fontWeight: 'bold',
+        },
+        icon: <XCircle className="text-white w-6 h-6" />
+      });
     } finally {
       setLoading(false);
     }
@@ -130,11 +180,7 @@ const Login = () => {
             </div>
           </div>
 
-          {error && (
-            <div className="bg-red-500/20 backdrop-blur-md border border-red-500/30 text-white px-4 py-3 rounded-xl text-sm font-semibold text-center">
-              {error}
-            </div>
-          )}
+
 
           <button
             type="submit"

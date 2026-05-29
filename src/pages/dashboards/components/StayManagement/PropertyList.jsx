@@ -1,5 +1,6 @@
 import React from 'react';
 import CustomTable from '../../../../components/CustomTable';
+import { useAuth } from '../../../../context/AuthContext';
 import {
   RefreshCw,
   MapPin,
@@ -17,6 +18,13 @@ const PropertyList = ({
   onSync,
   syncingPropertyId
 }) => {
+  const { user } = useAuth();
+  const isSuperAdmin = user?.role === 'Super Admin' || user?.roleKey === 'super-admin';
+  const hasPermission = (module, action) => isSuperAdmin || user?.permissions?.[module]?.[action] === true;
+
+  const canView = hasPermission('stays', 'view');
+  const canEdit = hasPermission('stays', 'edit');
+
   const columns = [
     {
       key: 'name',
@@ -110,17 +118,19 @@ const PropertyList = ({
         const isSyncing = syncingPropertyId === row.id;
         return (
           <div className="flex items-center gap-2">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onViewDetail(row);
-              }}
-              className="p-2 text-gray-500 hover:text-orange-600 hover:bg-orange-50 rounded-xl transition-all"
-              title="View Details"
-            >
-              <Eye className="w-4.5 h-4.5" />
-            </button>
-            {!row.isSynced && (
+            {canView && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onViewDetail(row);
+                }}
+                className="p-2 text-gray-500 hover:text-orange-600 hover:bg-orange-50 rounded-xl transition-all"
+                title="View Details"
+              >
+                <Eye className="w-4.5 h-4.5" />
+              </button>
+            )}
+            {canEdit && !row.isSynced && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -138,7 +148,7 @@ const PropertyList = ({
                 {isSyncing ? 'Syncing...' : 'Sync'}
               </button>
             )}
-            {row.isSynced && (
+            {canEdit && row.isSynced && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();

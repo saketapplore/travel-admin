@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { PropertyProvider } from './context/PropertyContext';
+import { Toaster } from 'react-hot-toast';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
@@ -10,6 +11,7 @@ function App() {
   return (
     <AuthProvider>
       <PropertyProvider>
+        <Toaster position="top-center" reverseOrder={false} />
         <Router>
           <Routes>
             <Route path="/login" element={<Login />} />

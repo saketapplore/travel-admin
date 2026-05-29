@@ -130,7 +130,7 @@ const DashboardLayout = ({ children }) => {
             </div>
             <div className="flex items-center space-x-4">
               <div className="text-right">
-                <p className="font-semibold">{user?.role || 'Admin'}</p>
+                <p className="font-semibold">{user?.role?.name || (typeof user?.role === 'string' ? user.role : 'Admin')}</p>
                 <p className="text-sm text-orange-100">{user?.email}</p>
               </div>
               {/* User Avatar Circle with Dropdown */}

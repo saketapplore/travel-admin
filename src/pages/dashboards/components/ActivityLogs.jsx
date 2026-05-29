@@ -1,7 +1,20 @@
 import React, { useState } from 'react';
 import CustomTable from '../../../components/CustomTable';
+import { useAuth } from '../../../context/AuthContext';
 
 const ActivityLogs = () => {
+  const { user } = useAuth();
+  const isSuperAdmin = user?.role === 'Super Admin' || user?.roleKey === 'super-admin';
+  const canView = isSuperAdmin || user?.permissions?.['logs']?.['view'] === true;
+
+  if (!canView) {
+    return (
+      <div className="bg-white rounded-lg shadow-md p-12 text-center border border-gray-100">
+        <h3 className="text-xl font-semibold text-gray-800 mb-2">Access Denied</h3>
+        <p className="text-sm text-gray-600">You don't have permission to view activity logs.</p>
+      </div>
+    );
+  }
   const [logs, setLogs] = useState([
     {
       id: 1,

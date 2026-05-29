@@ -63,9 +63,7 @@ export const usePropertyManagement = (propertyManagers) => {
 
   const handleDeleteProperty = useCallback(
     (id) => {
-      if (window.confirm('Are you sure you want to delete this property?')) {
-        deleteProperty(id);
-      }
+      deleteProperty(id);
     },
     [deleteProperty]
   );

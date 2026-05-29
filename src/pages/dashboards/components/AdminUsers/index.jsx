@@ -4,6 +4,9 @@ import UserTable from './UserTable';
 import CreateUserModal from './CreateUserModal';
 import EditUserModal from './EditUserModal';
 import { useAdminUsers } from './useAdminUsers';
+import { useAuth } from '@/context/AuthContext';
+import { EditIcon, DeleteIcon } from '@/components/icons';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
 
 const AdminUsers = () => {
   const {
@@ -27,14 +30,17 @@ const AdminUsers = () => {
     itemsPerPage,
     handleEnableUser,
     handleDisableUser,
+    handleDeleteUser,
     fetchUsers,
-    authUser,
     users
   } = useAdminUsers();
+
+  const { canAccess } = useAuth();
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
+  const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, userId: null });
 
   const columns = [
     {
@@ -91,22 +97,40 @@ const AdminUsers = () => {
     }
   ];
 
-  if (authUser?.roleKey === 'super-admin') {
+  const canCreate = canAccess('adminUsers', 'create');
+  const canEdit = canAccess('adminUsers', 'edit');
+  const canDelete = canAccess('adminUsers', 'delete');
+
+  if (canEdit || canDelete) {
     columns.push({
       key: 'action',
-      header: 'Action',
+      header: 'Actions',
       accessor: (r) => r,
       render: (_, r) => (
-        <button
-          onClick={() => {
-            setEditingUser(r);
-            setShowEditModal(true);
-            fetchActiveRoles();
-          }}
-          className="text-orange-600 hover:text-orange-900 font-medium"
-        >
-          Edit
-        </button>
+        <div className="flex items-center space-x-3">
+          {canEdit && (
+            <button
+              onClick={() => {
+                setEditingUser(r);
+                setShowEditModal(true);
+                fetchActiveRoles();
+              }}
+              className="p-1.5 text-blue-600 hover:text-blue-900 hover:bg-blue-50 rounded-lg transition-colors"
+              title="Edit"
+            >
+              <EditIcon className="w-5 h-5" />
+            </button>
+          )}
+          {canDelete && (
+            <button
+              onClick={() => setDeleteConfirm({ isOpen: true, userId: r._id || r.id })}
+              className="p-1.5 text-red-600 hover:text-red-900 hover:bg-red-50 rounded-lg transition-colors"
+              title="Delete"
+            >
+              <DeleteIcon className="w-5 h-5" />
+            </button>
+          )}
+        </div>
       ),
       cellClassName: 'text-sm font-medium'
     });
@@ -120,16 +144,18 @@ const AdminUsers = () => {
             <h3 className="text-xl font-semibold text-gray-800 mb-2">Admin Users</h3>
             <p className="text-sm text-gray-600">Manage admin users and their activation status</p>
           </div>
-          <button
-            onClick={() => {
-              setShowCreateModal(true);
-              fetchActiveRoles();
-            }}
-            className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2.5 rounded-2xl font-bold transition-all shadow-md active:scale-95 flex items-center space-x-2"
-          >
-            <span className="text-xl">+</span>
-            <span>Create Admin</span>
-          </button>
+          {canCreate && (
+            <button
+              onClick={() => {
+                setShowCreateModal(true);
+                fetchActiveRoles();
+              }}
+              className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2.5 rounded-2xl font-bold transition-all shadow-md active:scale-95 flex items-center space-x-2"
+            >
+              <span className="text-xl">+</span>
+              <span>Create Admin</span>
+            </button>
+          )}
         </div>
 
         {error && (
@@ -179,7 +205,19 @@ const AdminUsers = () => {
         user={editingUser}
         activeRoles={activeRoles}
         activeRolesLoading={activeRolesLoading}
-        authUser={authUser}
+      />
+
+      <ConfirmDialog
+        isOpen={deleteConfirm.isOpen}
+        title="Delete Admin User?"
+        message="Are you sure you want to delete this admin user? This action cannot be undone and will permanently remove their access."
+        confirmText="Yes, Delete User"
+        onConfirm={async () => {
+          await handleDeleteUser(deleteConfirm.userId);
+          setDeleteConfirm({ isOpen: false, userId: null });
+        }}
+        onCancel={() => setDeleteConfirm({ isOpen: false, userId: null })}
+        type="danger"
       />
     </>
   );

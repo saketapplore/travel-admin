@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../../../context/AuthContext';
 import CustomTable from '../../../components/CustomTable';
 import { EditIcon, EnableIcon, DisableIcon } from '../../../components/icons';
+import ConfirmDialog from '../../../components/ui/ConfirmDialog';
 
 const AdminAccounts = () => {
   const { userAccounts, createAccount, updateAccount, deleteAccount } = useAuth();
@@ -16,6 +17,7 @@ const AdminAccounts = () => {
     status: 'Active'
   });
   const [formError, setFormError] = useState('');
+  const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, admin: null });
 
   const handleCreateAdmin = () => {
     setEditingAdmin(null);
@@ -51,11 +53,9 @@ const AdminAccounts = () => {
   };
 
   const handleDisableAdmin = (admin) => {
-    if (window.confirm('Are you sure you want to disable this account?')) {
-      const result = updateAccount(admin.id, { ...admin, status: 'Inactive' });
-      if (!result.success) {
-        setFormError(result.message || 'Failed to disable account');
-      }
+    const result = updateAccount(admin.id, { ...admin, status: 'Inactive' });
+    if (!result.success) {
+      setFormError(result.message || 'Failed to disable account');
     }
   };
 
@@ -141,7 +141,7 @@ const AdminAccounts = () => {
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleDisableAdmin(row);
+                  setConfirmDialog({ isOpen: true, admin: row });
                 }}
                 className="p-2 text-red-600 hover:text-red-900 hover:bg-red-50 rounded-lg transition-colors"
                 title="Disable"
@@ -288,6 +288,19 @@ const AdminAccounts = () => {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        title="Disable Account?"
+        message={`Are you sure you want to disable the account for ${confirmDialog.admin?.name}? They will lose access to the platform.`}
+        confirmText="Disable Account"
+        onConfirm={() => {
+          handleDisableAdmin(confirmDialog.admin);
+          setConfirmDialog({ isOpen: false, admin: null });
+        }}
+        onCancel={() => setConfirmDialog({ isOpen: false, admin: null })}
+        type="warning"
+      />
     </>
   );
 };

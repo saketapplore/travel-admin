@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { userService } from '@/services/userService';
 import { roleService } from '@/services/roleService';
+import { permissionService } from '@/services/permissionService';
 import { useAuth } from '@/context/AuthContext';
 
 export const useAdminUsers = () => {
@@ -12,6 +13,8 @@ export const useAdminUsers = () => {
   const [rolesLoading, setRolesLoading] = useState(false);
   const [activeRoles, setActiveRoles] = useState([]);
   const [activeRolesLoading, setActiveRolesLoading] = useState(false);
+  const [availablePermissions, setAvailablePermissions] = useState([]);
+  const [permissionsLoading, setPermissionsLoading] = useState(false);
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState('');
@@ -52,6 +55,22 @@ export const useAdminUsers = () => {
       setActiveRolesLoading(false);
     }
   }, [roles]);
+
+  const fetchPermissions = useCallback(async () => {
+    setPermissionsLoading(true);
+    try {
+      const response = await permissionService.getAll();
+      setAvailablePermissions(
+        Array.isArray(response?.data?.data || response?.data)
+          ? response?.data?.data || response?.data
+          : []
+      );
+    } catch (error) {
+      console.error('Permissions fetch error:', error);
+    } finally {
+      setPermissionsLoading(false);
+    }
+  }, []);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -112,6 +131,15 @@ export const useAdminUsers = () => {
     }
   };
 
+  const handleDeleteUser = async (id) => {
+    try {
+      await userService.delete(id);
+      await fetchUsers();
+    } catch (error) {
+      setError('Failed to delete user.');
+    }
+  };
+
   const filteredUsers = useMemo(() => {
     return users.filter((user) => {
       const matchesSearch =
@@ -158,7 +186,10 @@ export const useAdminUsers = () => {
     roles,
     activeRoles,
     activeRolesLoading,
+    availablePermissions,
+    permissionsLoading,
     fetchActiveRoles,
+    fetchPermissions,
     searchQuery,
     setSearchQuery,
     roleFilter,
@@ -173,6 +204,7 @@ export const useAdminUsers = () => {
     itemsPerPage,
     handleEnableUser,
     handleDisableUser,
+    handleDeleteUser,
     fetchUsers,
     authUser,
     refreshUser

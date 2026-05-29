@@ -1,32 +1,36 @@
 import React, { useState } from 'react';
-import { Users, ShieldCheck } from 'lucide-react';
+import { Users } from 'lucide-react';
 import RoleList from './RoleList';
-import PermissionList from './PermissionList';
 import RoleModal from './RoleModal';
 import { useRolesPermissions } from './useRolesPermissions';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
+import { useAuth } from '../../../../context/AuthContext';
 
 const RolesPermissions = () => {
+  const { canAccess } = useAuth();
   const {
-    rolesSubSection,
-    setRolesSubSection,
     rolesData,
     rolesLoading,
     rolesError,
     fetchRoles,
-    permissionsData,
-    permissionsLoading,
-    permissionsError,
-    permissionPage,
-    setPermissionPage,
-    PERMISSION_PAGE_SIZE,
     handleEnableRole,
     handleDisableRole,
     handleDeleteRole
   } = useRolesPermissions();
 
+  const canCreate = canAccess('rolesPermissions', 'create');
+  const canEdit = canAccess('rolesPermissions', 'edit');
+  const canDelete = canAccess('rolesPermissions', 'delete');
 
   const [showRoleModal, setShowRoleModal] = useState(false);
   const [editingRole, setEditingRole] = useState(null);
+  const [confirmDialog, setConfirmDialog] = useState({ 
+    isOpen: false, 
+    type: 'danger', 
+    title: '', 
+    message: '', 
+    onConfirm: () => {} 
+  });
 
   const handleAddRole = () => {
     setEditingRole(null);
@@ -40,68 +44,64 @@ const RolesPermissions = () => {
 
   return (
     <>
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <div className="mb-6">
-          <h3 className="text-xl font-semibold text-gray-800 mb-4">Roles & Permissions</h3>
-
-          <div className="flex space-x-3 mb-6 bg-gray-50 p-1.5 rounded-2xl w-fit border border-gray-100">
-            <button
-              onClick={() => setRolesSubSection('roles')}
-              className={`px-8 py-2.5 rounded-xl font-bold transition-all duration-300 flex items-center gap-2.5 ${rolesSubSection === 'roles' ? 'bg-orange-500 text-white shadow-md' : 'text-gray-500 hover:bg-white hover:text-orange-600'}`}
-            >
-              <Users className="w-5 h-5" />
-              <span>Roles</span>
-            </button>
-            <button
-              onClick={() => setRolesSubSection('permissions')}
-              className={`px-8 py-2.5 rounded-xl font-bold transition-all duration-300 flex items-center gap-2.5 ${rolesSubSection === 'permissions' ? 'bg-orange-500 text-white shadow-md' : 'text-gray-500 hover:bg-white hover:text-orange-600'}`}
-            >
-              <ShieldCheck className="w-5 h-5" />
-              <span>Permissions</span>
-            </button>
+      <div className="bg-white rounded-3xl shadow-xl p-10 border border-gray-100">
+        <div className="mb-10 flex items-center justify-between">
+          <div>
+            <h3 className="text-3xl font-black text-gray-800 mb-2 tracking-tight">Roles & Permissions</h3>
+            <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">
+              Overview of all user roles and their global capabilities
+            </p>
           </div>
-
-          <p className="text-sm text-gray-600">
-            {rolesSubSection === 'roles'
-              ? 'Overview of all user roles and their capabilities'
-              : 'Detailed view of permissions across roles'}
-          </p>
+          {canCreate && (
+            <button
+              onClick={handleAddRole}
+              className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-3.5 rounded-2xl font-black transition-all shadow-lg shadow-orange-500/20 active:scale-95 flex items-center gap-2"
+            >
+              <span className="text-xl">+</span>
+              <span>Add New Role</span>
+            </button>
+          )}
         </div>
 
-        {rolesSubSection === 'roles' ? (
-          <>
-            {rolesError && (
-              <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded text-sm">
-                {rolesError}
-              </div>
-            )}
-            <div className="flex justify-end mb-4">
-              <button
-                onClick={handleAddRole}
-                className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2.5 rounded-2xl font-bold transition-all shadow-md active:scale-95"
-              >
-                + Add Role
-              </button>
-            </div>
-            <RoleList
-              roles={rolesData}
-              loading={rolesLoading}
-              onEdit={handleEditRole}
-              onEnable={handleEnableRole}
-              onDisable={handleDisableRole}
-              onDelete={handleDeleteRole}
-            />
-          </>
-        ) : (
-          <PermissionList
-            permissions={permissionsData}
-            loading={permissionsLoading}
-            error={permissionsError}
-            page={permissionPage}
-            pageSize={PERMISSION_PAGE_SIZE}
-            onPageChange={setPermissionPage}
-          />
+        {rolesError && (
+          <div className="mb-6 bg-red-50 border border-red-100 text-red-600 px-6 py-4 rounded-2xl text-sm font-bold flex items-center gap-3">
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+            {rolesError}
+          </div>
         )}
+
+        <RoleList
+          roles={rolesData}
+          loading={rolesLoading}
+          onEdit={handleEditRole}
+          onEnable={handleEnableRole}
+          onDisable={(id) => setConfirmDialog({
+            isOpen: true,
+            type: 'warning',
+            title: 'Disable Role?',
+            message: 'Are you sure you want to disable this role? Users with this role will lose their global permissions.',
+            confirmText: 'Disable Role',
+            onConfirm: () => {
+              handleDisableRole(id);
+              setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+            }
+          })}
+          onDelete={(id) => setConfirmDialog({
+            isOpen: true,
+            type: 'danger',
+            title: 'Delete Role?',
+            message: 'Are you sure you want to delete this role? This action cannot be undone.',
+            confirmText: 'Delete Role',
+            onConfirm: () => {
+              handleDeleteRole(id);
+              setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+            }
+          })}
+          canEdit={canEdit}
+          canDelete={canDelete}
+        />
       </div>
 
       <RoleModal
@@ -109,7 +109,16 @@ const RolesPermissions = () => {
         onClose={() => setShowRoleModal(false)}
         onRoleSaved={fetchRoles}
         editingRole={editingRole}
-        availablePermissions={permissionsData}
+      />
+
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        type={confirmDialog.type}
+        confirmText={confirmDialog.confirmText}
+        onConfirm={confirmDialog.onConfirm}
+        onCancel={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
       />
     </>
   );

@@ -67,7 +67,27 @@ export const trStaysService = {
       console.error('Batch upload error:', err);
       throw err;
     }
-  }
+  },
+  
+  /**
+   * Update property details (Manual Override)
+   * @param {string} id - Local DB Property _id
+   * @param {Object} data - Fields to update
+   */
+  patchProperty: (id, data) => api.patch(`/tr-stays/property/${id}`, data),
+
+  /**
+   * Update room details (Manual Override)
+   * @param {string} id - Local DB Room _id
+   * @param {Object} data - Fields to update
+   */
+  patchRoom: (id, data) => api.patch(`/tr-stays/room/${id}`, data),
+
+  /**
+   * Update room pricing/availability calendar on Beds24
+   * @param {Object} data - { roomId: number, calendar: [{ from, to, price1, numAvail, minStay }] }
+   */
+  updateCalendar: (data) => api.post('/tr-stays/update-calendar', data)
 };
 
 export default trStaysService;

@@ -190,6 +190,88 @@ export const useStayManagement = () => {
     updateImages,
     openDetail,
     closeDetail,
-    clearSyncResult
+    clearSyncResult,
+    
+    /**
+     * Patch property with manual overrides
+     */
+    updatePropertyDetail: async (id, data) => {
+      try {
+        const response = await trStaysService.patchProperty(id, data);
+        setSyncResult({ type: 'success', message: 'Property updated successfully' });
+        
+        // Update selectedProperty instantly
+        setSelectedProperty(prev => {
+          if (!prev || prev._id !== id) return prev;
+          return { ...prev, ...data };
+        });
+
+        await fetchProperties();
+        return response.data;
+      } catch (err) {
+        console.error('Update property error:', err);
+        setSyncResult({ type: 'error', message: err.response?.data?.message || 'Failed to update property' });
+        throw err;
+      }
+    },
+
+    /**
+     * Patch room with manual overrides
+     */
+    updateRoomDetail: async (id, data) => {
+      try {
+        const response = await trStaysService.patchRoom(id, data);
+        setSyncResult({ type: 'success', message: 'Room updated successfully' });
+        
+        // Update selectedProperty instantly
+        setSelectedProperty(prev => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            roomTypes: (prev.roomTypes || []).map(room => 
+              room._id === id ? { ...room, ...data } : room
+            )
+          };
+        });
+
+        await fetchProperties();
+        return response.data;
+      } catch (err) {
+        console.error('Update room error:', err);
+        setSyncResult({ type: 'error', message: err.response?.data?.message || 'Failed to update room' });
+        throw err;
+      }
+    },
+
+    /**
+     * Update room calendar (pricing/availability) on Beds24
+     */
+    updateRoomCalendar: async (beds24RoomId, calendarData) => {
+      try {
+        const response = await trStaysService.updateCalendar({ roomId: beds24RoomId, calendar: calendarData });
+        const calendarHistory = response.data?.calendarHistory;
+        setSyncResult({ type: 'success', message: 'Calendar updated successfully' });
+        
+        // Update selectedProperty instantly
+        setSelectedProperty(prev => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            roomTypes: (prev.roomTypes || []).map(room => 
+              room.id === beds24RoomId ? { ...room, calendarHistory } : room
+            )
+          };
+        });
+
+        // Also update properties list in background
+        await fetchProperties();
+        
+        return calendarHistory;
+      } catch (err) {
+        console.error('Update calendar error:', err);
+        setSyncResult({ type: 'error', message: err.response?.data?.message || 'Failed to update calendar' });
+        throw err;
+      }
+    }
   };
 };

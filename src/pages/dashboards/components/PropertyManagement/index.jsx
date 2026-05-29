@@ -2,6 +2,8 @@ import React from 'react';
 import { usePropertyManagement } from './usePropertyManagement';
 import PropertyTable from './PropertyTable';
 import PropertyModal from './PropertyModal';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
+import { useState } from 'react';
 
 const PropertyManagement = ({ propertyManagers }) => {
   const {
@@ -27,6 +29,8 @@ const PropertyManagement = ({ propertyManagers }) => {
     toggleDateSelection
   } = usePropertyManagement(propertyManagers);
 
+  const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, propertyId: null });
+
   return (
     <>
       <div className="bg-white rounded-lg shadow-md p-6 mb-8">
@@ -43,7 +47,7 @@ const PropertyManagement = ({ propertyManagers }) => {
         <PropertyTable
           properties={properties}
           onEdit={handleEditProperty}
-          onDelete={handleDeleteProperty}
+          onDelete={(id) => setDeleteConfirm({ isOpen: true, propertyId: id })}
         />
       </div>
 
@@ -68,6 +72,19 @@ const PropertyManagement = ({ propertyManagers }) => {
         onRemoveFile={handleRemoveFile}
         onCalendarNavigate={handleCalendarNavigate}
         onToggleDate={toggleDateSelection}
+      />
+
+      <ConfirmDialog
+        isOpen={deleteConfirm.isOpen}
+        title="Delete Property?"
+        message="Are you sure you want to delete this property? This action cannot be undone."
+        confirmText="Delete Property"
+        onConfirm={() => {
+          handleDeleteProperty(deleteConfirm.propertyId);
+          setDeleteConfirm({ isOpen: false, propertyId: null });
+        }}
+        onCancel={() => setDeleteConfirm({ isOpen: false, propertyId: null })}
+        type="danger"
       />
     </>
   );

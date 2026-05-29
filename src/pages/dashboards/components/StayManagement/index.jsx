@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useStayManagement } from './useStayManagement';
 import PropertyList from './PropertyList';
 import PropertyDetail from './PropertyDetail';
+import { useAuth } from '../../../../context/AuthContext';
 import {
   Search,
   RefreshCw,
@@ -18,6 +19,7 @@ import {
  * Handles discovery of Beds24 properties, sync, and image branding.
  */
 const StayManagement = () => {
+  const { user } = useAuth();
   const {
     properties,
     totalCount,
@@ -40,8 +42,14 @@ const StayManagement = () => {
     updateImages,
     openDetail,
     closeDetail,
-    clearSyncResult
+    clearSyncResult,
+    updatePropertyDetail,
+    updateRoomDetail,
+    updateRoomCalendar
   } = useStayManagement();
+
+  const isSuperAdmin = user?.role === 'Super Admin' || user?.roleKey === 'super-admin';
+  const canEdit = isSuperAdmin || user?.permissions?.['stays']?.['edit'] === true;
 
   // Auto-dismiss sync result after 5s
   useEffect(() => {
@@ -83,18 +91,20 @@ const StayManagement = () => {
             </button>
 
             {/* Bulk Sync */}
-            <button
-              onClick={syncAllProperties}
-              disabled={bulkSyncing || loading}
-              className="flex items-center gap-2 px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-2xl transition-all duration-300 shadow-md active:scale-95 disabled:opacity-50"
-            >
-              {bulkSyncing ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <RefreshCw className="w-4 h-4" />
-              )}
-              {bulkSyncing ? 'Syncing All...' : 'Sync All Properties'}
-            </button>
+            {canEdit && (
+              <button
+                onClick={syncAllProperties}
+                disabled={bulkSyncing || loading}
+                className="flex items-center gap-2 px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-2xl transition-all duration-300 shadow-md active:scale-95 disabled:opacity-50"
+              >
+                {bulkSyncing ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-4 h-4" />
+                )}
+                {bulkSyncing ? 'Syncing All...' : 'Sync All Properties'}
+              </button>
+            )}
           </div>
         </div>
 
@@ -215,6 +225,9 @@ const StayManagement = () => {
         onUpdateImages={updateImages}
         updatingImages={updatingImages}
         imageUpdateTarget={imageUpdateTarget}
+        onUpdatePropertyDetail={updatePropertyDetail}
+        onUpdateRoomDetail={updateRoomDetail}
+        onUpdateRoomCalendar={updateRoomCalendar}
       />
     </>
   );

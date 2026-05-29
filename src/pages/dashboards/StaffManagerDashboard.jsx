@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import CustomTable from '../../components/CustomTable';
 import { EditIcon, DeleteIcon } from '../../components/icons';
 import { Users, CheckCircle2, Palmtree, Building } from 'lucide-react';
+import ConfirmDialog from '../../components/ui/ConfirmDialog';
 
 const StaffManagerDashboard = () => {
   const [staff, setStaff] = useState([
@@ -48,6 +49,7 @@ const StaffManagerDashboard = () => {
     status: 'Active',
     contact: ''
   });
+  const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, staffId: null });
 
   const handleAddStaff = () => {
     setEditingStaff(null);
@@ -78,9 +80,7 @@ const StaffManagerDashboard = () => {
   };
 
   const handleDeleteStaff = (id) => {
-    if (window.confirm('Are you sure you want to remove this staff member?')) {
-      setStaff(staff.filter((s) => s.id !== id));
-    }
+    setStaff(staff.filter((s) => s.id !== id));
   };
 
   const columns = [
@@ -142,7 +142,7 @@ const StaffManagerDashboard = () => {
           <button
             onClick={(e) => {
               e.stopPropagation();
-              handleDeleteStaff(row.id);
+              setDeleteConfirm({ isOpen: true, staffId: row.id });
             }}
             className="p-2 text-red-600 hover:text-red-900 hover:bg-red-50 rounded-lg transition-colors"
             title="Remove"
@@ -321,6 +321,19 @@ const StaffManagerDashboard = () => {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={deleteConfirm.isOpen}
+        title="Remove Staff Member?"
+        message="Are you sure you want to remove this staff member from the system? This action cannot be undone."
+        confirmText="Remove Staff"
+        onConfirm={() => {
+          handleDeleteStaff(deleteConfirm.staffId);
+          setDeleteConfirm({ isOpen: false, staffId: null });
+        }}
+        onCancel={() => setDeleteConfirm({ isOpen: false, staffId: null })}
+        type="danger"
+      />
     </div>
   );
 };

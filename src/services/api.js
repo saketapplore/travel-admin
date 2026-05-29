@@ -61,11 +61,13 @@ api.interceptors.request.use(
           // Warn if there's a mismatch between localStorage role and token role
           if (tokenPayload) {
             const tokenRole = tokenPayload.role || tokenPayload.roleKey || tokenPayload.userRole;
-            const localStorageRole = userData.role || userData.roleKey;
+            const roleObj = userData.role || userData.roleKey;
+            const localStorageRole = typeof roleObj === 'object' ? roleObj.name : roleObj;
+            
             if (
               tokenRole &&
               localStorageRole &&
-              tokenRole.toLowerCase() !== localStorageRole.toLowerCase()
+              String(tokenRole).toLowerCase() !== String(localStorageRole).toLowerCase()
             ) {
               console.warn('Role mismatch detected:', {
                 localStorageRole: localStorageRole,

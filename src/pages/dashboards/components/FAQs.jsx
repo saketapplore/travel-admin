@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { faqService } from '../../../services/faqService';
 import { EditIcon, DeleteIcon } from '../../../components/icons';
+import { useAuth } from '../../../context/AuthContext';
+import ConfirmDialog from '../../../components/ui/ConfirmDialog';
 
 const FAQs = () => {
+  const { user } = useAuth();
   const [faqs, setFaqs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -16,6 +19,7 @@ const FAQs = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
+  const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, faqId: null });
   const PAGE_SIZE = 10;
 
   // Fetch FAQs
@@ -81,10 +85,6 @@ const FAQs = () => {
   };
 
   const handleDeleteFaq = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this FAQ?')) {
-      return;
-    }
-
     try {
       // Based on screenshot, DELETE requires answer in body
       const faq = faqs.find((f) => f._id === id || f.id === id);
@@ -139,6 +139,13 @@ const FAQs = () => {
     }
   };
 
+  const isSuperAdmin = user?.role === 'Super Admin' || user?.roleKey === 'super-admin';
+  const hasPermission = (module, action) => isSuperAdmin || user?.permissions?.[module]?.[action] === true;
+
+  const canCreate = hasPermission('faqs', 'create');
+  const canEdit = hasPermission('faqs', 'edit');
+  const canDelete = hasPermission('faqs', 'delete');
+
   const columns = [
     {
       key: 'question',
@@ -165,20 +172,24 @@ const FAQs = () => {
         const faqId = row._id || row.id;
         return (
           <div className="flex items-center space-x-3">
-            <button
-              onClick={() => handleEditFaq(row)}
-              className="p-2 text-blue-600 hover:text-blue-900 hover:bg-blue-50 rounded-lg transition-colors"
-              title="Edit"
-            >
-              <EditIcon className="w-5 h-5" />
-            </button>
-            <button
-              onClick={() => handleDeleteFaq(faqId)}
-              className="p-2 text-red-600 hover:text-red-900 hover:bg-red-50 rounded-lg transition-colors"
-              title="Delete"
-            >
-              <DeleteIcon className="w-5 h-5" />
-            </button>
+            {canEdit && (
+              <button
+                onClick={() => handleEditFaq(row)}
+                className="p-2 text-blue-600 hover:text-blue-900 hover:bg-blue-50 rounded-lg transition-colors"
+                title="Edit"
+              >
+                <EditIcon className="w-5 h-5" />
+              </button>
+            )}
+            {canDelete && (
+              <button
+                onClick={() => setDeleteConfirm({ isOpen: true, faqId })}
+                className="p-2 text-red-600 hover:text-red-900 hover:bg-red-50 rounded-lg transition-colors"
+                title="Delete"
+              >
+                <DeleteIcon className="w-5 h-5" />
+              </button>
+            )}
           </div>
         );
       }
@@ -194,12 +205,14 @@ const FAQs = () => {
               <h3 className="text-xl font-semibold text-gray-800 mb-2">FAQs</h3>
               <p className="text-sm text-gray-600">Manage frequently asked questions and answers</p>
             </div>
-            <button
-              onClick={handleAddFaq}
-              className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2.5 rounded-2xl font-bold transition-all duration-300 shadow-md active:scale-95"
-            >
-              + Add FAQ
-            </button>
+            {canCreate && (
+              <button
+                onClick={handleAddFaq}
+                className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2.5 rounded-2xl font-bold transition-all duration-300 shadow-md active:scale-95"
+              >
+                + Add FAQ
+              </button>
+            )}
           </div>
         </div>
 
@@ -399,6 +412,19 @@ const FAQs = () => {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={deleteConfirm.isOpen}
+        title="Delete FAQ?"
+        message="Are you sure you want to delete this FAQ? This action cannot be undone."
+        confirmText="Delete FAQ"
+        onConfirm={async () => {
+          await handleDeleteFaq(deleteConfirm.faqId);
+          setDeleteConfirm({ isOpen: false, faqId: null });
+        }}
+        onCancel={() => setDeleteConfirm({ isOpen: false, faqId: null })}
+        type="danger"
+      />
     </>
   );
 };

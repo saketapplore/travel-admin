@@ -14,12 +14,10 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://martha-insightful-genevie.ngrok-free.dev',
+        // target: 'https://martha-insightful-genevie.ngrok-free.dev',
+        target: "http://localhost:8080",
         changeOrigin: true,
-        secure: false,
-        headers: {
-          'ngrok-skip-browser-warning': 'true'
-        }
+        secure: false
       }
     }
   },

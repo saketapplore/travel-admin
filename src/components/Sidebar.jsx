@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
   LogOut,
-  Building2,
   Hotel,
   User,
   ShieldCheck,
@@ -13,11 +12,12 @@ import {
   BarChart3,
   History,
   HelpCircle,
-  BadgePercent
+  BadgePercent,
+  LayoutDashboard
 } from 'lucide-react';
 
 const Sidebar = ({ activeSection, setActiveSection }) => {
-  const { logout } = useAuth();
+  const { logout, user, canAccess } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -25,20 +25,20 @@ const Sidebar = ({ activeSection, setActiveSection }) => {
     navigate('/login');
   };
 
-  // Path for the icon
   const platformFeeImageIcon = '/src/assets/platform-fee.png';
 
   const menuItems = [
-    // { id: 'properties', label: 'Property Management', icon: <Building2 className="w-5 h-5" /> },
-    { id: 'stays', label: 'Stay Management', icon: <Hotel className="w-5 h-5" /> },
-    { id: 'users', label: 'Admin Users', icon: <User className="w-5 h-5" /> },
-    { id: 'roles', label: 'Roles & Permissions', icon: <ShieldCheck className="w-5 h-5" /> },
-    { id: 'bookings', label: 'Booking Management', icon: <CalendarDays className="w-5 h-5" /> },
-    { id: 'discounts', label: 'Discounts & Packages', icon: <Gift className="w-5 h-5" /> },
-    { id: 'financial', label: 'Transactions', icon: <CircleDollarSign className="w-5 h-5" /> },
+    // { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" />, module: 'dashboard' },
+    { id: 'stays', label: 'Stay Management', icon: <Hotel className="w-5 h-5" />, module: 'stayManagement' },
+    { id: 'users', label: 'Admin Users', icon: <User className="w-5 h-5" />, module: 'adminUsers' },
+    { id: 'roles', label: 'Roles & Permissions', icon: <ShieldCheck className="w-5 h-5" />, module: 'rolesPermissions' },
+    { id: 'bookings', label: 'Booking Management', icon: <CalendarDays className="w-5 h-5" />, module: 'bookings' },
+    { id: 'discounts', label: 'Discounts & Packages', icon: <Gift className="w-5 h-5" />, module: 'discounts' },
+    { id: 'transactions', label: 'Transactions', icon: <CircleDollarSign className="w-5 h-5" />, module: 'transactions' },
     {
-      id: 'platform-fee',
+      id: 'financial-setting',
       label: 'Financial Setting',
+      module: 'financialSetting',
       icon: (
         <div className="w-5 h-5 flex items-center justify-center">
           <img
@@ -54,10 +54,14 @@ const Sidebar = ({ activeSection, setActiveSection }) => {
         </div>
       )
     },
-    { id: 'reporting', label: 'Reporting & Analytics', icon: <BarChart3 className="w-5 h-5" /> },
-    { id: 'logs', label: 'Activity Logs', icon: <History className="w-5 h-5" /> },
-    { id: 'faqs', label: 'FAQs', icon: <HelpCircle className="w-5 h-5" /> }
+    { id: 'reporting', label: 'Reporting & Analytics', icon: <BarChart3 className="w-5 h-5" />, module: 'reporting' },
+    { id: 'logs', label: 'Activity Logs', icon: <History className="w-5 h-5" />, module: 'logs' },
+    { id: 'faqs', label: 'FAQs', icon: <HelpCircle className="w-5 h-5" />, module: 'faqs' }
   ];
+
+  const filteredMenuItems = menuItems.filter(item => {
+    return canAccess(item.module, 'view');
+  });
 
   return (
     <aside className="lg:w-72 w-full mb-6 lg:mb-0 lg:fixed lg:left-6 lg:top-24 lg:h-[calc(100vh-7rem)] z-40">
@@ -68,7 +72,7 @@ const Sidebar = ({ activeSection, setActiveSection }) => {
           </h3>
         </div>
         <nav className="space-y-1.5 overflow-y-auto flex-1 pr-1 custom-scrollbar">
-          {menuItems.map((item) => (
+          {filteredMenuItems.map((item) => (
             <button
               key={item.id}
               onClick={() => setActiveSection(item.id)}

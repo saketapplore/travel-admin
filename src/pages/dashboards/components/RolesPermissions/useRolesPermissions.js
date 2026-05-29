@@ -70,7 +70,6 @@ export const useRolesPermissions = () => {
   };
 
   const handleDisableRole = async (id) => {
-    if (!window.confirm('Are you sure you want to disable this role?')) return;
     try {
       await roleService.disable(id);
       await fetchRoles();
@@ -80,8 +79,6 @@ export const useRolesPermissions = () => {
   };
 
   const handleDeleteRole = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this role? This action cannot be undone.'))
-      return;
     try {
       await roleService.delete(id);
       await fetchRoles();
