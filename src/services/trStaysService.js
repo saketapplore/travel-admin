@@ -87,7 +87,43 @@ export const trStaysService = {
    * Update room pricing/availability calendar on Beds24
    * @param {Object} data - { roomId: number, calendar: [{ from, to, price1, numAvail, minStay }] }
    */
-  updateCalendar: (data) => api.post('/tr-stays/update-calendar', data)
+  updateCalendar: (data) => api.post('/tr-stays/update-calendar', data),
+
+  /**
+   * Create a new custom property (no Beds24 connection)
+   */
+  createCustomProperty: (data) => api.post('/tr-stays/property/create-custom', data),
+
+  /**
+   * Create a new room for a custom property
+   */
+  createCustomRoom: (data) => api.post('/tr-stays/room/create-custom', data),
+
+  /**
+   * Delete a custom property and all its rooms
+   * @param {string} id - MongoDB _id of the property
+   */
+  deleteCustomProperty: (id) => api.delete(`/tr-stays/property/${id}`),
+
+  /**
+   * Location search autocomplete (Google Places via backend proxy)
+   * @param {string} input - search query
+   */
+  placesAutocomplete: (input) =>
+    api.get('/tr-stays/places/autocomplete', { params: { input } }),
+
+  /**
+   * Resolve a selected place to coordinates + address components
+   * @param {string} placeId - Google place_id
+   */
+  placeDetails: (placeId) =>
+    api.get('/tr-stays/places/details', { params: { placeId } }),
+
+  /**
+   * Reverse geocode a coordinate to address components (used on pin drag)
+   */
+  reverseGeocode: (lat, lng) =>
+    api.get('/tr-stays/geocode/reverse', { params: { lat, lng } })
 };
 
 export default trStaysService;

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { Upload, X, Image as ImageIcon, Plus, Loader2, Link, CheckCircle2 } from 'lucide-react';
+import { Upload, X, Image as ImageIcon, Plus, Loader2, Link, CheckCircle2, GripVertical, Star } from 'lucide-react';
 import { trStaysService } from '../../../../services/trStaysService';
 
 /**
@@ -9,7 +9,7 @@ import { trStaysService } from '../../../../services/trStaysService';
  *
  * Uploaded files are sent to S3 via the backend, returning URLs.
  */
-const ImageUploader = ({ images = [], onSave, saving = false, label = 'Images' }) => {
+const ImageUploader = ({ images = [], onSave, onChange, saving = false, label = 'Images' }) => {
   const [imageUrls, setImageUrls] = useState([...images]);
   const [newUrl, setNewUrl] = useState('');
   const [isDirty, setIsDirty] = useState(false);
@@ -20,8 +20,15 @@ const ImageUploader = ({ images = [], onSave, saving = false, label = 'Images' }
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [draggedIndex, setDraggedIndex] = useState(null);
+  const [dragOverIndex, setDragOverIndex] = useState(null);
   const urlInputRef = useRef(null);
   const fileInputRef = useRef(null);
+  const isFirstRender = useRef(true);
+
+  // Live mode: when onChange is provided (creation flows), changes propagate to
+  // the parent immediately — no "Save Changes" button click required.
+  const liveMode = typeof onChange === 'function';
 
   // ✅ FIX #3: Resync local state when parent images prop changes (e.g. after fetchProperties)
   useEffect(() => {
@@ -29,6 +36,18 @@ const ImageUploader = ({ images = [], onSave, saving = false, label = 'Images' }
     setIsDirty(false);
     setSaveError(null);
   }, [JSON.stringify(images)]);
+
+  // In live mode, notify parent whenever the image list changes (skip first mount)
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    if (liveMode) {
+      onChange(imageUrls);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(imageUrls)]);
 
   // Add URL from input
   const addUrl = () => {
@@ -53,8 +72,45 @@ const ImageUploader = ({ images = [], onSave, saving = false, label = 'Images' }
     setSaveSuccess(false);
   };
 
+  // ── Reorder (drag-and-drop) ───────────────────────────────────────────────
+  const handleReorderStart = (index) => {
+    setDraggedIndex(index);
+  };
+
+  const handleReorderOver = (e, index) => {
+    e.preventDefault(); // allow drop
+    if (index !== dragOverIndex) setDragOverIndex(index);
+  };
+
+  const handleReorderDrop = (e, dropIndex) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (draggedIndex === null || draggedIndex === dropIndex) {
+      setDraggedIndex(null);
+      setDragOverIndex(null);
+      return;
+    }
+    setImageUrls((prev) => {
+      const next = [...prev];
+      const [moved] = next.splice(draggedIndex, 1);
+      next.splice(dropIndex, 0, moved);
+      return next;
+    });
+    setIsDirty(true);
+    setSaveSuccess(false);
+    setSaveError(null);
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleReorderEnd = () => {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
   // ✅ FIX #1 & #2: handleSave is now async, waits for API result, and only clears isDirty on success
   const handleSave = async () => {
+    if (!onSave) return;
     setIsSaving(true);
     setSaveError(null);
     setSaveSuccess(false);
@@ -164,14 +220,14 @@ const ImageUploader = ({ images = [], onSave, saving = false, label = 'Images' }
         </h4>
         <div className="flex items-center gap-2">
           {/* Success indicator */}
-          {saveSuccess && !isDirty && (
+          {saveSuccess && !isDirty && !liveMode && (
             <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 animate-in fade-in duration-200">
               <CheckCircle2 className="w-3.5 h-3.5" />
               Saved
             </span>
           )}
-          {/* Save button - only shows when there are unsaved changes */}
-          {isDirty && (
+          {/* Save button - only in edit mode (live mode propagates automatically) */}
+          {isDirty && !liveMode && (
             <button
               onClick={handleSave}
               disabled={isProcessing}
@@ -205,50 +261,85 @@ const ImageUploader = ({ images = [], onSave, saving = false, label = 'Images' }
         </div>
       )}
 
-      {/* Image grid */}
+      {/* Image grid (drag to reorder) */}
       {imageUrls.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {imageUrls.map((url, index) => (
-            <div
-              key={`${url}-${index}`}
-              className="relative group rounded-xl overflow-hidden border border-gray-200 bg-gray-50 aspect-[4/3] cursor-pointer"
-              onClick={() => setPreviewImage(url)}
-            >
-              <img
-                src={url}
-                alt={`Image ${index + 1}`}
-                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                onError={(e) => {
-                  e.target.style.display = 'none';
-                  e.target.nextSibling.style.display = 'flex';
-                }}
-              />
-              <div
-                className="w-full h-full items-center justify-center text-gray-400 text-xs"
-                style={{ display: 'none' }}
-              >
-                <ImageIcon className="w-8 h-8" />
-              </div>
-              {/* Overlay with remove button */}
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    removeUrl(index);
-                  }}
-                  className="p-1.5 bg-red-500 rounded-full text-white shadow-lg hover:bg-red-600 transition-colors"
-                  title="Remove image"
+        <>
+          {imageUrls.length > 1 && (
+            <p className="flex items-center gap-1.5 text-[11px] text-gray-400">
+              <GripVertical className="w-3.5 h-3.5" />
+              Drag images to reorder — the first image is shown as the cover.
+            </p>
+          )}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {imageUrls.map((url, index) => {
+              const isDragging = draggedIndex === index;
+              const isDropTarget = dragOverIndex === index && draggedIndex !== index;
+              return (
+                <div
+                  key={`${url}-${index}`}
+                  draggable
+                  onDragStart={() => handleReorderStart(index)}
+                  onDragOver={(e) => handleReorderOver(e, index)}
+                  onDrop={(e) => handleReorderDrop(e, index)}
+                  onDragEnd={handleReorderEnd}
+                  className={`relative group rounded-xl overflow-hidden border bg-gray-50 aspect-[4/3] cursor-move transition-all duration-150 ${
+                    isDragging
+                      ? 'opacity-40 border-orange-400 scale-95'
+                      : isDropTarget
+                      ? 'border-orange-500 ring-2 ring-orange-300 scale-105'
+                      : 'border-gray-200'
+                  }`}
+                  onClick={() => setPreviewImage(url)}
                 >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-              {/* Index badge */}
-              <div className="absolute top-2 left-2 bg-black/50 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
-                {index + 1}
-              </div>
-            </div>
-          ))}
-        </div>
+                  <img
+                    src={url}
+                    alt={`Image ${index + 1}`}
+                    draggable={false}
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 pointer-events-none"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      e.target.nextSibling.style.display = 'flex';
+                    }}
+                  />
+                  <div
+                    className="w-full h-full items-center justify-center text-gray-400 text-xs"
+                    style={{ display: 'none' }}
+                  >
+                    <ImageIcon className="w-8 h-8" />
+                  </div>
+                  {/* Overlay with remove button */}
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeUrl(index);
+                      }}
+                      className="p-1.5 bg-red-500 rounded-full text-white shadow-lg hover:bg-red-600 transition-colors"
+                      title="Remove image"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  {/* Drag handle hint (top-right) */}
+                  <div className="absolute top-2 right-2 p-1 bg-black/40 rounded-md text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                    <GripVertical className="w-3.5 h-3.5" />
+                  </div>
+                  {/* Cover / index badge (top-left) */}
+                  {index === 0 ? (
+                    <div className="absolute top-2 left-2 inline-flex items-center gap-1 bg-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
+                      <Star className="w-2.5 h-2.5 fill-white" />
+                      Cover
+                    </div>
+                  ) : (
+                    <div className="absolute top-2 left-2 bg-black/50 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                      {index + 1}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </>
       )}
 
       {/* Upload from computer — Drag & Drop Zone */}

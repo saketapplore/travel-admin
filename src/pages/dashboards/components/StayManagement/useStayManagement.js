@@ -88,44 +88,45 @@ export const useStayManagement = () => {
   }, [fetchProperties]);
 
   // Update images for property or room
-  // Returns a promise so callers can await and handle errors
-  const updateImages = useCallback(async (beds24PropertyId, images, beds24RoomId = null) => {
+  // Custom properties (MongoDB ObjectId) use patchProperty/patchRoom; Beds24 use updateImages endpoint
+  const updateImages = useCallback(async (propertyId, images, roomId = null) => {
     setUpdatingImages(true);
-    setImageUpdateTarget({ propertyId: beds24PropertyId, roomId: beds24RoomId });
+    setImageUpdateTarget({ propertyId, roomId });
     try {
-      const response = await trStaysService.updateImages({ beds24PropertyId, beds24RoomId, images });
-      console.log('Image update API response:', response.data);
+      // Custom properties have a 24-char hex MongoDB ObjectId as their id
+      const isCustomProperty = /^[0-9a-f]{24}$/i.test(String(propertyId));
+
+      if (isCustomProperty) {
+        if (roomId) {
+          await trStaysService.patchRoom(roomId, { images });
+        } else {
+          await trStaysService.patchProperty(propertyId, { images });
+        }
+      } else {
+        await trStaysService.updateImages({ beds24PropertyId: propertyId, beds24RoomId: roomId, images });
+      }
+
       setSyncResult({
         type: 'success',
-        message: beds24RoomId
-          ? `Room images updated successfully`
-          : `Property images updated successfully`
+        message: roomId ? 'Room images updated successfully' : 'Property images updated successfully'
       });
-      // Refresh to get updated data from DB
       await fetchProperties();
-      
-      // Also update selectedProperty if it's the same one
+
       setSelectedProperty((prev) => {
-        if (!prev || prev.id !== beds24PropertyId) return prev;
-        if (beds24RoomId) {
-          // Update room images
+        if (!prev || prev.id !== propertyId) return prev;
+        if (roomId) {
           return {
             ...prev,
             roomTypes: (prev.roomTypes || []).map((room) =>
-              room.id === beds24RoomId ? { ...room, images } : room
+              room.id === roomId ? { ...room, images } : room
             )
           };
         }
-        // Update property images
         return { ...prev, images };
       });
     } catch (err) {
       console.error('Image update error:', err);
-      setSyncResult({
-        type: 'error',
-        message: err.message || 'Failed to update images'
-      });
-      // Re-throw so ImageUploader can show the error
+      setSyncResult({ type: 'error', message: err.message || 'Failed to update images' });
       throw err;
     } finally {
       setUpdatingImages(false);
@@ -162,8 +163,9 @@ export const useStayManagement = () => {
 
     const matchesFilter =
       filterStatus === 'all' ||
-      (filterStatus === 'synced' && p.isSynced) ||
-      (filterStatus === 'unsynced' && !p.isSynced);
+      (filterStatus === 'custom' && p.isCustomProperty) ||
+      (filterStatus === 'synced' && p.isSynced && !p.isCustomProperty) ||
+      (filterStatus === 'unsynced' && !p.isSynced && !p.isCustomProperty);
 
     return matchesSearch && matchesFilter;
   });
@@ -244,32 +246,88 @@ export const useStayManagement = () => {
     },
 
     /**
-     * Update room calendar (pricing/availability) on Beds24
+     * Update room calendar (pricing/availability) on Beds24 or local (custom rooms)
      */
-    updateRoomCalendar: async (beds24RoomId, calendarData) => {
+    updateRoomCalendar: async (roomId, calendarData) => {
       try {
-        const response = await trStaysService.updateCalendar({ roomId: beds24RoomId, calendar: calendarData });
+        const response = await trStaysService.updateCalendar({ roomId, calendar: calendarData });
         const calendarHistory = response.data?.calendarHistory;
         setSyncResult({ type: 'success', message: 'Calendar updated successfully' });
-        
-        // Update selectedProperty instantly
+
         setSelectedProperty(prev => {
           if (!prev) return prev;
           return {
             ...prev,
-            roomTypes: (prev.roomTypes || []).map(room => 
-              room.id === beds24RoomId ? { ...room, calendarHistory } : room
+            roomTypes: (prev.roomTypes || []).map(room =>
+              room.id === roomId ? { ...room, calendarHistory } : room
             )
           };
         });
 
-        // Also update properties list in background
         await fetchProperties();
-        
         return calendarHistory;
       } catch (err) {
         console.error('Update calendar error:', err);
         setSyncResult({ type: 'error', message: err.response?.data?.message || 'Failed to update calendar' });
+        throw err;
+      }
+    },
+
+    /**
+     * Create a new custom property (no Beds24)
+     */
+    createCustomProperty: async (data) => {
+      try {
+        const response = await trStaysService.createCustomProperty(data);
+        setSyncResult({ type: 'success', message: 'Custom property created successfully!' });
+        await fetchProperties();
+        return response.data;
+      } catch (err) {
+        console.error('Create custom property error:', err);
+        setSyncResult({ type: 'error', message: err.response?.data?.message || 'Failed to create property' });
+        throw err;
+      }
+    },
+
+    /**
+     * Add a room to a custom property
+     */
+    createCustomRoom: async (propertyMongoId, roomData) => {
+      try {
+        const response = await trStaysService.createCustomRoom({ ...roomData, propertyId: propertyMongoId });
+        const newRoom = response.data?.data;
+        setSyncResult({ type: 'success', message: 'Room added successfully!' });
+
+        if (newRoom) {
+          setSelectedProperty(prev => {
+            if (!prev || String(prev._id) !== String(propertyMongoId)) return prev;
+            const roomWithId = { ...newRoom, id: String(newRoom._id || newRoom.id), isCustomRoom: true };
+            return { ...prev, roomTypes: [...(prev.roomTypes || []), roomWithId] };
+          });
+        }
+
+        await fetchProperties();
+        return response.data;
+      } catch (err) {
+        console.error('Create custom room error:', err);
+        setSyncResult({ type: 'error', message: err.response?.data?.message || 'Failed to add room' });
+        throw err;
+      }
+    },
+
+    /**
+     * Delete a custom property and all its rooms
+     */
+    deleteCustomProperty: async (propertyId) => {
+      try {
+        await trStaysService.deleteCustomProperty(propertyId);
+        setSyncResult({ type: 'success', message: 'Property deleted successfully' });
+        setDetailOpen(false);
+        setTimeout(() => setSelectedProperty(null), 300);
+        await fetchProperties();
+      } catch (err) {
+        console.error('Delete custom property error:', err);
+        setSyncResult({ type: 'error', message: err.response?.data?.message || 'Failed to delete property' });
         throw err;
       }
     }

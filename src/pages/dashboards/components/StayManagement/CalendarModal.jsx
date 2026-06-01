@@ -30,7 +30,8 @@ const CalendarModal = ({ isOpen, onClose, room, property, onUpdate }) => {
     setLoading(true);
     setError(null);
     try {
-      const updatedHistory = await onUpdate(room.beds24RoomId, [formData]);
+      // room.id works for both Beds24 (numeric) and custom rooms (MongoDB ObjectId)
+      const updatedHistory = await onUpdate(room.id, [formData]);
       if (updatedHistory) {
         setHistory(updatedHistory);
       }
@@ -242,7 +243,9 @@ const CalendarModal = ({ isOpen, onClose, room, property, onUpdate }) => {
         {/* Footer */}
         <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-end">
           <p className="text-[10px] text-gray-400 italic mr-auto">
-            Note: All updates are pushed directly to Beds24 API.
+            {room.isCustomRoom
+              ? 'Updates are saved locally to this property\'s calendar.'
+              : 'Updates are pushed directly to Beds24 API.'}
           </p>
           <button
             onClick={onClose}

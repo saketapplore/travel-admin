@@ -1,7 +1,8 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useStayManagement } from './useStayManagement';
 import PropertyList from './PropertyList';
 import PropertyDetail from './PropertyDetail';
+import CreatePropertyModal from './CreatePropertyModal';
 import { useAuth } from '../../../../context/AuthContext';
 import {
   Search,
@@ -11,7 +12,7 @@ import {
   XCircle,
   X,
   Building2,
-  Filter
+  Plus
 } from 'lucide-react';
 
 /**
@@ -20,6 +21,8 @@ import {
  */
 const StayManagement = () => {
   const { user } = useAuth();
+  const [createPropertyOpen, setCreatePropertyOpen] = useState(false);
+
   const {
     properties,
     totalCount,
@@ -45,7 +48,10 @@ const StayManagement = () => {
     clearSyncResult,
     updatePropertyDetail,
     updateRoomDetail,
-    updateRoomCalendar
+    updateRoomCalendar,
+    createCustomProperty,
+    createCustomRoom,
+    deleteCustomProperty,
   } = useStayManagement();
 
   const isSuperAdmin = user?.role === 'Super Admin' || user?.roleKey === 'super-admin';
@@ -59,8 +65,9 @@ const StayManagement = () => {
     }
   }, [syncResult, clearSyncResult]);
 
-  const syncedCount = properties.filter((p) => p.isSynced).length;
-  const unsyncedCount = properties.filter((p) => !p.isSynced).length;
+  const customCount = properties.filter((p) => p.isCustomProperty).length;
+  const syncedCount = properties.filter((p) => p.isSynced && !p.isCustomProperty).length;
+  const unsyncedCount = properties.filter((p) => !p.isSynced && !p.isCustomProperty).length;
 
   return (
     <>
@@ -90,6 +97,17 @@ const StayManagement = () => {
               <RefreshCw className={`w-4.5 h-4.5 ${loading ? 'animate-spin' : ''}`} />
             </button>
 
+            {/* Create Custom Property */}
+            {canEdit && (
+              <button
+                onClick={() => setCreatePropertyOpen(true)}
+                className="flex items-center gap-2 px-5 py-2.5 bg-white hover:bg-orange-50 text-orange-600 text-sm font-semibold rounded-2xl transition-all duration-300 border border-orange-300 active:scale-95"
+              >
+                <Plus className="w-4 h-4" />
+                Create Property
+              </button>
+            )}
+
             {/* Bulk Sync */}
             {canEdit && (
               <button
@@ -113,9 +131,13 @@ const StayManagement = () => {
           <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-500 bg-gray-100 px-3 py-1.5 rounded-full">
             Total: {totalCount}
           </span>
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-orange-600 bg-orange-50 px-3 py-1.5 rounded-full">
+            <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+            TR Custom: {customCount}
+          </span>
           <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-full">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-            Synced: {syncedCount}
+            Beds24: {syncedCount}
           </span>
           <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-600 bg-amber-50 px-3 py-1.5 rounded-full">
             <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
@@ -169,7 +191,8 @@ const StayManagement = () => {
           <div className="flex items-center gap-1.5 bg-gray-100 rounded-xl p-1">
             {[
               { key: 'all', label: 'All' },
-              { key: 'synced', label: 'Synced' },
+              { key: 'custom', label: 'TR Custom' },
+              { key: 'synced', label: 'Beds24' },
               { key: 'unsynced', label: 'Pending' }
             ].map(({ key, label }) => (
               <button
@@ -228,6 +251,15 @@ const StayManagement = () => {
         onUpdatePropertyDetail={updatePropertyDetail}
         onUpdateRoomDetail={updateRoomDetail}
         onUpdateRoomCalendar={updateRoomCalendar}
+        onCreateRoom={createCustomRoom}
+        onDeleteProperty={deleteCustomProperty}
+      />
+
+      {/* Create Custom Property Modal */}
+      <CreatePropertyModal
+        isOpen={createPropertyOpen}
+        onClose={() => setCreatePropertyOpen(false)}
+        onCreate={createCustomProperty}
       />
     </>
   );

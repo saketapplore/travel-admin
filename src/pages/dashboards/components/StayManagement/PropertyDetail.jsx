@@ -11,24 +11,24 @@ import {
   CookingPot,
   Shield,
   CreditCard,
-  ChevronDown,
-  ChevronUp,
   RefreshCw,
   Info,
   BedDouble,
-  Building2,
   Globe,
   FileText,
   Compass,
   Loader2,
-  AlertTriangle,
   Edit3,
-  Calendar
+  Calendar,
+  Plus,
+  Trash2
 } from 'lucide-react';
 import ImageUploader from './ImageUploader';
 import EditPropertyModal from './EditPropertyModal';
 import EditRoomModal from './EditRoomModal';
 import CalendarModal from './CalendarModal';
+import AddRoomModal from './AddRoomModal';
+import AvailabilityCalendarEditor from './AvailabilityCalendarEditor';
 
 /**
  * Maps feature codes to human-readable labels + icons
@@ -66,12 +66,16 @@ const PropertyDetail = ({
   imageUpdateTarget,
   onUpdatePropertyDetail,
   onUpdateRoomDetail,
-  onUpdateRoomCalendar
+  onUpdateRoomCalendar,
+  onCreateRoom,
+  onDeleteProperty,
 }) => {
   const [propertyEditOpen, setPropertyEditOpen] = useState(false);
   const [roomEditOpen, setRoomEditOpen] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [addRoomOpen, setAddRoomOpen] = useState(false);
   const [activeRoomToEdit, setActiveRoomToEdit] = useState(null);
+  const [deletingProperty, setDeletingProperty] = useState(false);
 
   if (!property) return null;
 
@@ -144,41 +148,67 @@ const PropertyDetail = ({
           </div>
 
           {/* Quick actions */}
-          <div className="flex items-center gap-2 mt-4">
-            <button
-              onClick={() => onSync(property.id)}
-              disabled={syncing}
-              className="flex items-center gap-2 px-4 py-2 bg-white/15 hover:bg-white/25 text-white text-sm font-semibold rounded-xl transition-all disabled:opacity-50 border border-white/20"
-            >
-              {syncing ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <RefreshCw className="w-4 h-4" />
-              )}
-              {syncing ? 'Syncing...' : 'Sync Property'}
-            </button>
-            {property.isSynced && (
+          <div className="flex items-center gap-2 mt-4 flex-wrap">
+            {/* Sync only for Beds24 properties */}
+            {!property.isCustomProperty && (
               <button
-                onClick={() => setPropertyEditOpen(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-orange-700/30 hover:bg-orange-700/50 text-white text-sm font-semibold rounded-xl transition-all border border-white/20"
+                onClick={() => onSync(property.id)}
+                disabled={syncing}
+                className="flex items-center gap-2 px-4 py-2 bg-white/15 hover:bg-white/25 text-white text-sm font-semibold rounded-xl transition-all disabled:opacity-50 border border-white/20"
               >
-                <Edit3 className="w-4 h-4" />
-                Edit Hotel Details
+                {syncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                {syncing ? 'Syncing...' : 'Sync Property'}
               </button>
             )}
-            <span className="text-xs text-white/50 ml-2">ID: {property.id}</span>
+
+            <button
+              onClick={() => setPropertyEditOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-orange-700/30 hover:bg-orange-700/50 text-white text-sm font-semibold rounded-xl transition-all border border-white/20"
+            >
+              <Edit3 className="w-4 h-4" />
+              Edit Details
+            </button>
+
+            {/* Add Room — custom properties only */}
+            {property.isCustomProperty && (
+              <button
+                onClick={() => setAddRoomOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-white/15 hover:bg-white/25 text-white text-sm font-semibold rounded-xl transition-all border border-white/20"
+              >
+                <Plus className="w-4 h-4" />
+                Add Room
+              </button>
+            )}
+
+            {/* Delete — custom properties only */}
+            {property.isCustomProperty && (
+              <button
+                onClick={async () => {
+                  if (!window.confirm(`Delete "${property.name}" and all its rooms? This cannot be undone.`)) return;
+                  setDeletingProperty(true);
+                  try { await onDeleteProperty(property._id || property.id); } finally { setDeletingProperty(false); }
+                }}
+                disabled={deletingProperty}
+                className="flex items-center gap-2 px-4 py-2 bg-red-500/20 hover:bg-red-500/40 text-white text-sm font-semibold rounded-xl transition-all border border-white/20 disabled:opacity-50"
+              >
+                {deletingProperty ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                {deletingProperty ? 'Deleting...' : 'Delete'}
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Image protection notice */}
-        <div className="flex-shrink-0 mx-6 mt-4 px-4 py-3 bg-blue-50 border border-blue-100 rounded-xl flex items-start gap-2.5">
-          <Shield className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
-          <p className="text-xs text-blue-700 leading-relaxed">
-            <span className="font-semibold">Image Protection:</span> Syncing metadata will{' '}
-            <span className="font-bold underline">NOT</span> delete your custom uploaded images. Only
-            address, rules, pricing, and occupancy data are overwritten.
-          </p>
-        </div>
+        {/* Image protection notice — Beds24 only */}
+        {!property.isCustomProperty && (
+          <div className="flex-shrink-0 mx-6 mt-4 px-4 py-3 bg-blue-50 border border-blue-100 rounded-xl flex items-start gap-2.5">
+            <Shield className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
+            <p className="text-xs text-blue-700 leading-relaxed">
+              <span className="font-semibold">Image Protection:</span> Syncing metadata will{' '}
+              <span className="font-bold underline">NOT</span> delete your custom uploaded images. Only
+              address, rules, pricing, and occupancy data are overwritten.
+            </p>
+          </div>
+        )}
 
         {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto px-6 pb-8">
@@ -314,9 +344,19 @@ const PropertyDetail = ({
           {/* Room Types */}
           {property.roomTypes && property.roomTypes.length > 0 ? (
             <section className="mt-6">
-              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
-                Room Types ({property.roomTypes.length})
-              </h3>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                  Room Types ({property.roomTypes.length})
+                </h3>
+                {property.isCustomProperty && (
+                  <button
+                    onClick={() => setAddRoomOpen(true)}
+                    className="flex items-center gap-1.5 text-xs font-semibold text-orange-600 hover:text-orange-700 hover:bg-orange-50 px-3 py-1.5 rounded-lg border border-orange-200 transition-all"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Add Room
+                  </button>
+                )}
+              </div>
               <div className="space-y-3">
                 {property.roomTypes.map((room) => {
                   const roomTexts = room.texts?.[0] || {};
@@ -416,13 +456,13 @@ const PropertyDetail = ({
                         )}
 
                         {/* Room Description */}
-                        {roomTexts.roomDescription && (
+                        {(roomTexts.roomDescription || room.roomDescription) && (
                           <div>
                             <span className="text-[10px] text-gray-400 uppercase font-bold block mb-1.5">
                               Description
                             </span>
                             <p className="text-sm text-gray-600 leading-relaxed">
-                              {roomTexts.roomDescription}
+                              {roomTexts.roomDescription || room.roomDescription}
                             </p>
                           </div>
                         )}
@@ -447,6 +487,15 @@ const PropertyDetail = ({
                             />
                           </div>
                         </div>
+
+                        {/* Inline availability calendar — custom rooms only */}
+                        {room.isCustomRoom && (
+                          <AvailabilityCalendarEditor
+                            room={room}
+                            property={property}
+                            onUpdate={onUpdateRoomCalendar}
+                          />
+                        )}
                       </div>
                     </div>
                   );
@@ -455,9 +504,18 @@ const PropertyDetail = ({
             </section>
           ) : property.isSynced && (
             <section className="mt-6 p-8 border-2 border-dashed border-gray-100 rounded-2xl flex flex-col items-center justify-center text-center">
-               <BedDouble className="w-8 h-8 text-gray-200 mb-2" />
-               <p className="text-sm text-gray-400 font-medium">No Room Types found for this property.</p>
-               <p className="text-xs text-gray-400 mt-1">Try syncing again if you expect rooms to be here.</p>
+              <BedDouble className="w-8 h-8 text-gray-200 mb-2" />
+              <p className="text-sm text-gray-400 font-medium">No Room Types found for this property.</p>
+              {property.isCustomProperty ? (
+                <button
+                  onClick={() => setAddRoomOpen(true)}
+                  className="mt-3 flex items-center gap-1.5 text-sm font-semibold text-orange-600 hover:text-orange-700 hover:bg-orange-50 px-4 py-2 rounded-xl border border-orange-200 transition-all"
+                >
+                  <Plus className="w-4 h-4" /> Add First Room
+                </button>
+              ) : (
+                <p className="text-xs text-gray-400 mt-1">Try syncing again if you expect rooms to be here.</p>
+              )}
             </section>
           )}
 
@@ -511,6 +569,13 @@ const PropertyDetail = ({
           room={property.roomTypes?.find(r => r.id === activeRoomToEdit?.id)}
           property={property}
           onUpdate={onUpdateRoomCalendar}
+        />
+
+        <AddRoomModal
+          isOpen={addRoomOpen}
+          onClose={() => setAddRoomOpen(false)}
+          property={property}
+          onAddRoom={(roomData) => onCreateRoom(property._id || property.id, roomData)}
         />
       </div>
     </>
