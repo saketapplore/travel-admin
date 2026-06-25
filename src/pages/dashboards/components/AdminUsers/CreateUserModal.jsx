@@ -31,6 +31,22 @@ const CreateUserModal = ({ isOpen, onClose, onUserCreated, activeRoles, activeRo
 
   if (!isOpen) return null;
 
+  // Selecting a role pre-fills the module toggles from that role's default
+  // access (still editable). e.g. Property Manager → reporting + financial + bookings.
+  const handleRoleChange = (roleId) => {
+    const role = activeRoles.find((r) => (r._id || r.id) === roleId);
+    setForm(prev => {
+      const next = { ...prev, role: roleId };
+      if (role && role.modules && typeof role.modules === 'object') {
+        next.modules = AVAILABLE_MODULES.reduce((acc, m) => ({
+          ...acc,
+          [m.id]: m.id === 'dashboard' ? true : !!role.modules[m.id]
+        }), {});
+      }
+      return next;
+    });
+  };
+
   const handleModuleToggle = (moduleId) => {
     setForm(prev => ({
       ...prev,
@@ -149,7 +165,7 @@ const CreateUserModal = ({ isOpen, onClose, onUserCreated, activeRoles, activeRo
                 ) : (
                   <select
                     value={form.role}
-                    onChange={(e) => setForm({ ...form, role: e.target.value })}
+                    onChange={(e) => handleRoleChange(e.target.value)}
                     className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 transition-all outline-none font-bold text-gray-700 appearance-none cursor-pointer"
                     required
                   >

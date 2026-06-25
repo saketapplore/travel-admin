@@ -1,701 +1,481 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Ticket, Plus, RefreshCw } from 'lucide-react';
 import { EditIcon, DeleteIcon } from '@/components/icons';
-import { Ticket, Package } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
+import { discountService } from '@/services/discountService';
+
+const BOOKING_TYPES = ['STAY', 'HOTEL', 'FLIGHT'];
+
+const INP =
+  'w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none text-sm';
+
+const emptyForm = () => ({
+  code: '',
+  description: '',
+  discountType: 'percentage',
+  value: '',
+  maxDiscount: '',
+  minBookingAmount: '',
+  validFrom: '',
+  validTo: '',
+  usageLimit: '',
+  oncePerUser: true,
+  applicableBookingTypes: [],
+  isActive: true
+});
+
+const dateInput = (v) => (v ? String(v).slice(0, 10) : '');
+
+const Field = ({ label, children }) => (
+  <div>
+    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">
+      {label}
+    </label>
+    {children}
+  </div>
+);
 
 const DiscountsPackages = () => {
   const { user } = useAuth();
-  const [discountsSubSection, setDiscountsSubSection] = useState('discounts');
-
   const isSuperAdmin = user?.role === 'Super Admin' || user?.roleKey === 'super-admin';
-  const hasPermission = (module, action) => isSuperAdmin || user?.permissions?.[module]?.[action] === true;
-
+  const hasPermission = (m, a) => isSuperAdmin || user?.permissions?.[m]?.[a] === true;
   const canCreate = hasPermission('discounts', 'create');
   const canEdit = hasPermission('discounts', 'edit');
   const canDelete = hasPermission('discounts', 'delete');
 
-  
-  const [discounts, setDiscounts] = useState([
-    {
-      id: 1,
-      code: 'SUMMER2024',
-      type: 'Percentage',
-      value: 20,
-      description: 'Summer special discount',
-      validFrom: '2024-06-01',
-      validTo: '2024-08-31',
-      minPurchase: 100,
-      maxDiscount: 500,
-      usageLimit: 100,
-      usedCount: 45,
-      status: 'Active'
-    },
-    {
-      id: 2,
-      code: 'WEEKEND50',
-      type: 'Fixed',
-      value: 50,
-      description: 'Weekend getaway discount',
-      validFrom: '2024-01-01',
-      validTo: '2024-12-31',
-      minPurchase: 200,
-      maxDiscount: null,
-      usageLimit: 50,
-      usedCount: 12,
-      status: 'Active'
+  const [coupons, setCoupons] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [showModal, setShowModal] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [form, setForm] = useState(emptyForm());
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState('');
+  const [deleteConfirm, setDeleteConfirm] = useState({ open: false, id: null });
+
+  const fetchCoupons = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await discountService.getAll({ limit: 100 });
+      const data = res?.data?.data || res?.data || [];
+      setCoupons(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setError(err?.message || 'Failed to load coupons.');
+    } finally {
+      setLoading(false);
     }
-  ]);
-  const [packages, setPackages] = useState([
-    {
-      id: 1,
-      name: 'Honeymoon Package',
-      description: 'Special package for honeymooners with romantic amenities',
-      price: 2999,
-      duration: 7,
-      includes: 'Breakfast, Spa, Romantic dinner, Room upgrade',
-      validFrom: '2024-01-01',
-      validTo: '2024-12-31',
-      status: 'Active'
-    },
-    {
-      id: 2,
-      name: 'Family Fun Package',
-      description: 'Perfect for families with kids',
-      price: 1999,
-      duration: 5,
-      includes: 'Breakfast, Kids activities, Pool access, Family room',
-      validFrom: '2024-01-01',
-      validTo: '2024-12-31',
-      status: 'Active'
+  }, []);
+
+  useEffect(() => {
+    fetchCoupons();
+  }, [fetchCoupons]);
+
+  const openCreate = () => {
+    setEditing(null);
+    setForm(emptyForm());
+    setFormError('');
+    setShowModal(true);
+  };
+
+  const openEdit = (c) => {
+    setEditing(c);
+    setForm({
+      code: c.code || '',
+      description: c.description || '',
+      discountType: c.discountType || 'percentage',
+      value: c.value ?? '',
+      maxDiscount: c.maxDiscount ?? '',
+      minBookingAmount: c.minBookingAmount ?? '',
+      validFrom: dateInput(c.validFrom),
+      validTo: dateInput(c.validTo),
+      usageLimit: c.usageLimit ?? '',
+      oncePerUser: c.oncePerUser !== false,
+      applicableBookingTypes: c.applicableBookingTypes || [],
+      isActive: c.isActive !== false
+    });
+    setFormError('');
+    setShowModal(true);
+  };
+
+  const toggleType = (t) => {
+    setForm((prev) => ({
+      ...prev,
+      applicableBookingTypes: prev.applicableBookingTypes.includes(t)
+        ? prev.applicableBookingTypes.filter((x) => x !== t)
+        : [...prev.applicableBookingTypes, t]
+    }));
+  };
+
+  const handleSave = async () => {
+    setFormError('');
+    if (!form.code.trim()) return setFormError('Coupon code is required.');
+    if (form.value === '' || Number(form.value) <= 0)
+      return setFormError('Enter a valid discount value.');
+
+    const payload = {
+      code: form.code.trim().toUpperCase(),
+      description: form.description.trim(),
+      discountType: form.discountType,
+      value: Number(form.value),
+      maxDiscount: form.maxDiscount === '' ? undefined : Number(form.maxDiscount),
+      minBookingAmount: form.minBookingAmount === '' ? 0 : Number(form.minBookingAmount),
+      validFrom: form.validFrom || undefined,
+      validTo: form.validTo || undefined,
+      usageLimit: form.usageLimit === '' ? undefined : Number(form.usageLimit),
+      oncePerUser: form.oncePerUser,
+      applicableBookingTypes: form.applicableBookingTypes,
+      isActive: form.isActive
+    };
+
+    setSaving(true);
+    try {
+      if (editing) {
+        await discountService.update(editing._id || editing.id, payload);
+      } else {
+        await discountService.create(payload);
+      }
+      setShowModal(false);
+      await fetchCoupons();
+    } catch (err) {
+      setFormError(err?.response?.data?.message || err?.message || 'Failed to save coupon.');
+    } finally {
+      setSaving(false);
     }
-  ]);
-  const [showDiscountModal, setShowDiscountModal] = useState(false);
-  const [showPackageModal, setShowPackageModal] = useState(false);
-  const [editingDiscount, setEditingDiscount] = useState(null);
-  const [editingPackage, setEditingPackage] = useState(null);
-  const [discountFormData, setDiscountFormData] = useState({
-    code: '',
-    type: 'Percentage',
-    value: '',
-    description: '',
-    validFrom: '',
-    validTo: '',
-    minPurchase: '',
-    maxDiscount: '',
-    usageLimit: '',
-    status: 'Active'
-  });
-  const [packageFormData, setPackageFormData] = useState({
-    name: '',
-    description: '',
-    price: '',
-    duration: '',
-    includes: '',
-    validFrom: '',
-    validTo: '',
-    status: 'Active'
-  });
-  const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, type: 'danger', title: '', message: '', onConfirm: () => {} });
-
-  const handleAddDiscount = () => {
-    setEditingDiscount(null);
-    setDiscountFormData({
-      code: '',
-      type: 'Percentage',
-      value: '',
-      description: '',
-      validFrom: '',
-      validTo: '',
-      minPurchase: '',
-      maxDiscount: '',
-      usageLimit: '',
-      status: 'Active'
-    });
-    setShowDiscountModal(true);
   };
 
-  const handleEditDiscount = (discount) => {
-    setEditingDiscount(discount);
-    setDiscountFormData({
-      code: discount.code,
-      type: discount.type,
-      value: discount.value,
-      description: discount.description,
-      validFrom: discount.validFrom,
-      validTo: discount.validTo,
-      minPurchase: discount.minPurchase,
-      maxDiscount: discount.maxDiscount || '',
-      usageLimit: discount.usageLimit,
-      status: discount.status
-    });
-    setShowDiscountModal(true);
-  };
-
-  const handleDeleteDiscount = (id) => {
-    setDiscounts(discounts.filter(d => d.id !== id));
-  };
-
-  const handleDiscountSubmit = (e) => {
-    e.preventDefault();
-    if (editingDiscount) {
-      setDiscounts(discounts.map(d =>
-        d.id === editingDiscount.id ? { ...discountFormData, id: editingDiscount.id, usedCount: editingDiscount.usedCount } : d
-      ));
-    } else {
-      setDiscounts([...discounts, {
-        ...discountFormData,
-        id: Date.now(),
-        usedCount: 0,
-        value: parseFloat(discountFormData.value),
-        minPurchase: parseFloat(discountFormData.minPurchase) || 0,
-        maxDiscount: discountFormData.maxDiscount ? parseFloat(discountFormData.maxDiscount) : null,
-        usageLimit: parseFloat(discountFormData.usageLimit) || 0
-      }]);
+  const handleDelete = async (id) => {
+    try {
+      await discountService.delete(id);
+      await fetchCoupons();
+    } catch (err) {
+      setError(err?.message || 'Failed to delete coupon.');
     }
-    setShowDiscountModal(false);
   };
 
-  const handleAddPackage = () => {
-    setEditingPackage(null);
-    setPackageFormData({
-      name: '',
-      description: '',
-      price: '',
-      duration: '',
-      includes: '',
-      validFrom: '',
-      validTo: '',
-      status: 'Active'
-    });
-    setShowPackageModal(true);
-  };
-
-  const handleEditPackage = (pkg) => {
-    setEditingPackage(pkg);
-    setPackageFormData({
-      name: pkg.name,
-      description: pkg.description,
-      price: pkg.price,
-      duration: pkg.duration,
-      includes: pkg.includes,
-      validFrom: pkg.validFrom,
-      validTo: pkg.validTo,
-      status: pkg.status
-    });
-    setShowPackageModal(true);
-  };
-
-  const handleDeletePackage = (id) => {
-    setPackages(packages.filter(p => p.id !== id));
-  };
-
-  const handlePackageSubmit = (e) => {
-    e.preventDefault();
-    if (editingPackage) {
-      setPackages(packages.map(p =>
-        p.id === editingPackage.id ? { ...packageFormData, id: editingPackage.id, price: parseFloat(packageFormData.price), duration: parseFloat(packageFormData.duration) } : p
-      ));
-    } else {
-      setPackages([...packages, {
-        ...packageFormData,
-        id: Date.now(),
-        price: parseFloat(packageFormData.price),
-        duration: parseFloat(packageFormData.duration)
-      }]);
-    }
-    setShowPackageModal(false);
+  const fmtValue = (c) => (c.discountType === 'percentage' ? `${c.value}%` : `₹${c.value}`);
+  const fmtValidity = (c) => {
+    const f = dateInput(c.validFrom);
+    const t = dateInput(c.validTo);
+    if (!f && !t) return 'No limit';
+    return `${f || '—'} → ${t || '—'}`;
   };
 
   return (
-    <>
-      <div className="bg-white rounded-lg shadow-md p-6 w-full">
-        <div className="mb-6">
-          <h3 className="text-xl font-semibold text-gray-800 mb-4">Discounts & Packages</h3>
-          <div className="flex space-x-4 mb-4">
-            <button
-              onClick={() => setDiscountsSubSection('discounts')}
-              className={`px-6 py-2.5 rounded-xl font-bold transition-all duration-300 flex items-center gap-2.5 ${
-                discountsSubSection === 'discounts'
-                  ? 'bg-orange-500 text-white shadow-md'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-orange-600'
-              }`}
-            >
-              <Ticket className="w-5 h-5" />
-              <span>Discount Codes</span>
-            </button>
-            <button
-              onClick={() => setDiscountsSubSection('packages')}
-              className={`px-6 py-2.5 rounded-xl font-bold transition-all duration-300 flex items-center gap-2.5 ${
-                discountsSubSection === 'packages'
-                  ? 'bg-orange-500 text-white shadow-md'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-orange-600'
-              }`}
-            >
-              <Package className="w-5 h-5" />
-              <span>Packages</span>
-            </button>
+    <div className="bg-white rounded-3xl shadow-md p-6 border border-gray-100">
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 bg-orange-50 rounded-2xl">
+            <Ticket className="w-6 h-6 text-orange-500" />
+          </div>
+          <div>
+            <h3 className="text-xl font-black text-gray-800">Discount Coupons</h3>
+            <p className="text-sm text-gray-500">One-time-use coupons (single user)</p>
           </div>
         </div>
-
-        {/* Discount Codes Section */}
-        {discountsSubSection === 'discounts' && (
-        <>
-        <div className="flex justify-between items-center mb-6">
-          <h4 className="text-lg font-semibold text-gray-800">Discount Codes</h4>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={fetchCoupons}
+            disabled={loading}
+            className="p-2.5 text-gray-400 hover:text-orange-600 hover:bg-orange-50 rounded-xl transition-colors"
+            title="Refresh"
+          >
+            <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+          </button>
           {canCreate && (
             <button
-              onClick={handleAddDiscount}
-              className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg font-semibold transition duration-200 shadow-md"
+              onClick={openCreate}
+              className="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2.5 rounded-2xl font-bold transition-all shadow-md active:scale-95 flex items-center gap-2"
             >
-              + Create Discount Code
+              <Plus className="w-5 h-5" /> Create Coupon
             </button>
           )}
         </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-gray-50 border-b">
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Code</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Value</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valid Period</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usage</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {discounts.map((discount) => (
-                <tr key={discount.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 font-mono">{discount.code}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{discount.type}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {discount.type === 'Percentage' ? `${discount.value}%` : `$${discount.value}`}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">{discount.description}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {discount.validFrom} to {discount.validTo}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {discount.usedCount} / {discount.usageLimit}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      discount.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                    }`}>
-                      {discount.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                    {canEdit && (
-                      <button
-                        onClick={() => handleEditDiscount(discount)}
-                        className="text-blue-600 hover:text-blue-900"
-                      >
-                        Edit
-                      </button>
-                    )}
-                    {canDelete && (
-                      <button
-                        onClick={() => setConfirmDialog({
-                          isOpen: true,
-                          type: 'danger',
-                          title: 'Delete Discount?',
-                          message: 'Are you sure you want to delete this discount code? This action cannot be undone.',
-                          onConfirm: () => {
-                            handleDeleteDiscount(discount.id);
-                            setConfirmDialog(prev => ({ ...prev, isOpen: false }));
-                          }
-                        })}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        Delete
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        </>
-        )}
-
-        {/* Packages Section */}
-        {discountsSubSection === 'packages' && (
-        <>
-        <div className="flex justify-between items-center mb-6">
-          <h4 className="text-lg font-semibold text-gray-800">Custom Packages</h4>
-          {canCreate && (
-            <button
-              onClick={handleAddPackage}
-              className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg font-semibold transition duration-200 shadow-md"
-            >
-              + Create Package
-            </button>
-          )}
-        </div>
-
-        <div className="overflow-x-auto -mx-6 px-6">
-          <table className="w-full min-w-[1200px]">
-            <thead>
-              <tr className="bg-gray-50 border-b">
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Package Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Includes</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valid Period</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {packages.map((pkg) => (
-                <tr key={pkg.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 text-sm font-medium text-gray-900 min-w-[180px]">{pkg.name}</td>
-                  <td className="px-6 py-4 text-sm text-gray-500 min-w-[200px] max-w-[300px]">{pkg.description}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">${pkg.price}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{pkg.duration} days</td>
-                  <td className="px-6 py-4 text-sm text-gray-500 min-w-[200px] max-w-[300px]">{pkg.includes}</td>
-                  <td className="px-6 py-4 text-sm text-gray-500 min-w-[180px]">
-                    <div className="flex flex-col">
-                      <span>{pkg.validFrom}</span>
-                      <span className="text-gray-400 text-xs">to</span>
-                      <span>{pkg.validTo}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      pkg.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                    }`}>
-                      {pkg.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex items-center space-x-3">
-                      {canEdit && (
-                        <button
-                          onClick={() => handleEditPackage(pkg)}
-                          className="p-2 text-blue-600 hover:text-blue-900 hover:bg-blue-50 rounded-lg transition-colors"
-                          title="Edit"
-                        >
-                          <EditIcon className="w-5 h-5" />
-                        </button>
-                      )}
-                      {canDelete && (
-                        <button
-                          onClick={() => setConfirmDialog({
-                            isOpen: true,
-                            type: 'danger',
-                            title: 'Delete Package?',
-                            message: 'Are you sure you want to delete this custom package? This action cannot be undone.',
-                            onConfirm: () => {
-                              handleDeletePackage(pkg.id);
-                              setConfirmDialog(prev => ({ ...prev, isOpen: false }));
-                            }
-                          })}
-                          className="p-2 text-red-600 hover:text-red-900 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Delete"
-                        >
-                          <DeleteIcon className="w-5 h-5" />
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        </>
-        )}
       </div>
 
-      {/* Discount Modal */}
-      {showDiscountModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto py-4">
-          <div className="bg-white rounded-lg p-8 max-w-2xl w-full mx-4 my-8 max-h-[90vh] flex flex-col">
-            <h3 className="text-2xl font-bold mb-6 flex-shrink-0">
-              {editingDiscount ? 'Edit Discount Code' : 'Create Discount Code'}
-            </h3>
-            <form onSubmit={handleDiscountSubmit} className="flex-1 overflow-y-auto pr-2">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Discount Code <span className="text-red-500">*</span></label>
-                  <input
-                    type="text"
-                    value={discountFormData.code}
-                    onChange={(e) => setDiscountFormData({ ...discountFormData, code: e.target.value.toUpperCase() })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent font-mono"
-                    placeholder="SUMMER2024"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Type <span className="text-red-500">*</span></label>
-                  <select
-                    value={discountFormData.type}
-                    onChange={(e) => setDiscountFormData({ ...discountFormData, type: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                    required
-                  >
-                    <option value="Percentage">Percentage (%)</option>
-                    <option value="Fixed">Fixed Amount ($)</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Value <span className="text-red-500">*</span></label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={discountFormData.value}
-                    onChange={(e) => setDiscountFormData({ ...discountFormData, value: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                    placeholder={discountFormData.type === 'Percentage' ? '20' : '50'}
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Minimum Purchase ($)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={discountFormData.minPurchase}
-                    onChange={(e) => setDiscountFormData({ ...discountFormData, minPurchase: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                    placeholder="100"
-                  />
-                </div>
-                {discountFormData.type === 'Percentage' && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Max Discount ($)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={discountFormData.maxDiscount}
-                      onChange={(e) => setDiscountFormData({ ...discountFormData, maxDiscount: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                      placeholder="500"
-                    />
-                  </div>
-                )}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Usage Limit</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={discountFormData.usageLimit}
-                    onChange={(e) => setDiscountFormData({ ...discountFormData, usageLimit: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                    placeholder="100"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Valid From <span className="text-red-500">*</span></label>
-                  <input
-                    type="date"
-                    value={discountFormData.validFrom}
-                    onChange={(e) => setDiscountFormData({ ...discountFormData, validFrom: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Valid To <span className="text-red-500">*</span></label>
-                  <input
-                    type="date"
-                    value={discountFormData.validTo}
-                    onChange={(e) => setDiscountFormData({ ...discountFormData, validTo: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                  <select
-                    value={discountFormData.status}
-                    onChange={(e) => setDiscountFormData({ ...discountFormData, status: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                  >
-                    <option value="Active">Active</option>
-                    <option value="Inactive">Inactive</option>
-                  </select>
-                </div>
-                <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                  <textarea
-                    value={discountFormData.description}
-                    onChange={(e) => setDiscountFormData({ ...discountFormData, description: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                    rows="3"
-                    placeholder="Enter discount description..."
-                  />
-                </div>
-              </div>
-              <div className="flex space-x-3 mt-6 flex-shrink-0 pt-4 border-t">
-                <button
-                  type="submit"
-                  className="flex-1 bg-orange-500 hover:bg-orange-600 text-white py-2 rounded-lg font-semibold transition duration-200"
-                >
-                  {editingDiscount ? 'Update Discount' : 'Create Discount'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowDiscountModal(false);
-                    setEditingDiscount(null);
-                  }}
-                  className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 rounded-lg font-semibold transition duration-200"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
+      {error && (
+        <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-2.5 rounded-xl text-sm">
+          {error}
         </div>
       )}
 
-      {/* Package Modal */}
-      {showPackageModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto py-4">
-          <div className="bg-white rounded-lg p-8 max-w-2xl w-full mx-4 my-8 max-h-[90vh] flex flex-col">
-            <h3 className="text-2xl font-bold mb-6 flex-shrink-0">
-              {editingPackage ? 'Edit Package' : 'Create Package'}
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider border-b border-gray-100">
+              <th className="px-4 py-3">Code</th>
+              <th className="px-4 py-3">Value</th>
+              <th className="px-4 py-3">Validity</th>
+              <th className="px-4 py-3">Usage</th>
+              <th className="px-4 py-3">Per user</th>
+              <th className="px-4 py-3">Status</th>
+              {(canEdit || canDelete) && <th className="px-4 py-3">Actions</th>}
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr>
+                <td colSpan={7} className="px-4 py-10 text-center text-gray-400">
+                  Loading…
+                </td>
+              </tr>
+            ) : coupons.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="px-4 py-10 text-center text-gray-400">
+                  No coupons yet
+                </td>
+              </tr>
+            ) : (
+              coupons.map((c) => (
+                <tr key={c._id || c.id} className="border-b border-gray-50 hover:bg-gray-50/60">
+                  <td className="px-4 py-3">
+                    <span className="font-bold text-gray-800">{c.code}</span>
+                    {c.description && <p className="text-xs text-gray-400">{c.description}</p>}
+                  </td>
+                  <td className="px-4 py-3 font-semibold text-gray-700">{fmtValue(c)}</td>
+                  <td className="px-4 py-3 text-gray-500 text-xs">{fmtValidity(c)}</td>
+                  <td className="px-4 py-3 text-gray-500">
+                    {c.usedCount || 0}
+                    {c.usageLimit ? ` / ${c.usageLimit}` : ''}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span
+                      className={`text-xs font-semibold ${
+                        c.oncePerUser !== false ? 'text-emerald-600' : 'text-gray-400'
+                      }`}
+                    >
+                      {c.oncePerUser !== false ? 'Once' : 'Multiple'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                        c.isActive !== false ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                      }`}
+                    >
+                      {c.isActive !== false ? 'Active' : 'Inactive'}
+                    </span>
+                  </td>
+                  {(canEdit || canDelete) && (
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        {canEdit && (
+                          <button
+                            onClick={() => openEdit(c)}
+                            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg"
+                            title="Edit"
+                          >
+                            <EditIcon className="w-5 h-5" />
+                          </button>
+                        )}
+                        {canDelete && (
+                          <button
+                            onClick={() => setDeleteConfirm({ open: true, id: c._id || c.id })}
+                            className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg"
+                            title="Delete"
+                          >
+                            <DeleteIcon className="w-5 h-5" />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  )}
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Create/Edit modal */}
+      {showModal && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          onClick={() => setShowModal(false)}
+        >
+          <div
+            className="bg-white rounded-3xl p-8 max-w-lg w-full max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-2xl font-black text-gray-800 mb-6">
+              {editing ? 'Edit Coupon' : 'Create Coupon'}
             </h3>
-            <form onSubmit={handlePackageSubmit} className="flex-1 overflow-y-auto pr-2">
+            {formError && (
+              <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-2.5 rounded-xl text-sm">
+                {formError}
+              </div>
+            )}
+
+            <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Package Name <span className="text-red-500">*</span></label>
+                <Field label="Coupon Code *">
                   <input
-                    type="text"
-                    value={packageFormData.name}
-                    onChange={(e) => setPackageFormData({ ...packageFormData, name: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                    placeholder="Honeymoon Package"
-                    required
+                    value={form.code}
+                    onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })}
+                    className={INP}
+                    placeholder="SAVE20"
                   />
-                </div>
-                <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Description <span className="text-red-500">*</span></label>
-                  <textarea
-                    value={packageFormData.description}
-                    onChange={(e) => setPackageFormData({ ...packageFormData, description: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                    rows="3"
-                    placeholder="Enter package description..."
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Price ($) <span className="text-red-500">*</span></label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={packageFormData.price}
-                    onChange={(e) => setPackageFormData({ ...packageFormData, price: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                    placeholder="2999"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Duration (days) <span className="text-red-500">*</span></label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={packageFormData.duration}
-                    onChange={(e) => setPackageFormData({ ...packageFormData, duration: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                    placeholder="7"
-                    required
-                  />
-                </div>
-                <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Includes <span className="text-red-500">*</span></label>
-                  <textarea
-                    value={packageFormData.includes}
-                    onChange={(e) => setPackageFormData({ ...packageFormData, includes: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                    rows="3"
-                    placeholder="Breakfast, Spa, Romantic dinner, Room upgrade"
-                    required
-                  />
-                  <p className="text-xs text-gray-500 mt-1">Separate items with commas</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Valid From <span className="text-red-500">*</span></label>
-                  <input
-                    type="date"
-                    value={packageFormData.validFrom}
-                    onChange={(e) => setPackageFormData({ ...packageFormData, validFrom: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Valid To <span className="text-red-500">*</span></label>
-                  <input
-                    type="date"
-                    value={packageFormData.validTo}
-                    onChange={(e) => setPackageFormData({ ...packageFormData, validTo: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                </Field>
+                <Field label="Status">
                   <select
-                    value={packageFormData.status}
-                    onChange={(e) => setPackageFormData({ ...packageFormData, status: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    value={form.isActive ? '1' : '0'}
+                    onChange={(e) => setForm({ ...form, isActive: e.target.value === '1' })}
+                    className={INP}
                   >
-                    <option value="Active">Active</option>
-                    <option value="Inactive">Inactive</option>
+                    <option value="1">Active</option>
+                    <option value="0">Inactive</option>
                   </select>
+                </Field>
+              </div>
+
+              <Field label="Description">
+                <input
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  className={INP}
+                  placeholder="Optional"
+                />
+              </Field>
+
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="Discount Type">
+                  <select
+                    value={form.discountType}
+                    onChange={(e) => setForm({ ...form, discountType: e.target.value })}
+                    className={INP}
+                  >
+                    <option value="percentage">Percentage (%)</option>
+                    <option value="flat">Flat (₹)</option>
+                  </select>
+                </Field>
+                <Field label={form.discountType === 'percentage' ? 'Value (%) *' : 'Value (₹) *'}>
+                  <input
+                    type="number"
+                    value={form.value}
+                    onChange={(e) => setForm({ ...form, value: e.target.value })}
+                    className={INP}
+                  />
+                </Field>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                {form.discountType === 'percentage' && (
+                  <Field label="Max Discount (₹)">
+                    <input
+                      type="number"
+                      value={form.maxDiscount}
+                      onChange={(e) => setForm({ ...form, maxDiscount: e.target.value })}
+                      className={INP}
+                      placeholder="No cap"
+                    />
+                  </Field>
+                )}
+                <Field label="Min Booking Amount (₹)">
+                  <input
+                    type="number"
+                    value={form.minBookingAmount}
+                    onChange={(e) => setForm({ ...form, minBookingAmount: e.target.value })}
+                    className={INP}
+                    placeholder="0"
+                  />
+                </Field>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="Valid From">
+                  <input
+                    type="date"
+                    value={form.validFrom}
+                    onChange={(e) => setForm({ ...form, validFrom: e.target.value })}
+                    className={INP}
+                  />
+                </Field>
+                <Field label="Valid To">
+                  <input
+                    type="date"
+                    value={form.validTo}
+                    onChange={(e) => setForm({ ...form, validTo: e.target.value })}
+                    className={INP}
+                  />
+                </Field>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="Global Usage Limit">
+                  <input
+                    type="number"
+                    value={form.usageLimit}
+                    onChange={(e) => setForm({ ...form, usageLimit: e.target.value })}
+                    className={INP}
+                    placeholder="Unlimited"
+                  />
+                </Field>
+                <Field label="One-time use per user">
+                  <select
+                    value={form.oncePerUser ? '1' : '0'}
+                    onChange={(e) => setForm({ ...form, oncePerUser: e.target.value === '1' })}
+                    className={INP}
+                  >
+                    <option value="1">Yes (once per user)</option>
+                    <option value="0">No</option>
+                  </select>
+                </Field>
+              </div>
+
+              <Field label="Applicable Booking Types (none = all)">
+                <div className="flex gap-2">
+                  {BOOKING_TYPES.map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => toggleType(t)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-colors ${
+                        form.applicableBookingTypes.includes(t)
+                          ? 'bg-orange-500 text-white border-orange-500'
+                          : 'bg-white text-gray-500 border-gray-200 hover:border-orange-300'
+                      }`}
+                    >
+                      {t}
+                    </button>
+                  ))}
                 </div>
-              </div>
-              <div className="flex space-x-3 mt-6 flex-shrink-0 pt-4 border-t">
-                <button
-                  type="submit"
-                  className="flex-1 bg-orange-500 hover:bg-orange-600 text-white py-2 rounded-lg font-semibold transition duration-200"
-                >
-                  {editingPackage ? 'Update Package' : 'Create Package'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowPackageModal(false);
-                    setEditingPackage(null);
-                  }}
-                  className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 rounded-lg font-semibold transition duration-200"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
+              </Field>
+            </div>
+
+            <div className="flex gap-3 mt-8">
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="flex-[2] bg-orange-500 hover:bg-orange-600 text-white py-3.5 rounded-2xl font-black disabled:opacity-50"
+              >
+                {saving ? 'Saving…' : editing ? 'Save Changes' : 'Create Coupon'}
+              </button>
+              <button
+                onClick={() => setShowModal(false)}
+                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-500 py-3.5 rounded-2xl font-black"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}
 
       <ConfirmDialog
-        isOpen={confirmDialog.isOpen}
-        title={confirmDialog.title}
-        message={confirmDialog.message}
-        type={confirmDialog.type}
-        onConfirm={confirmDialog.onConfirm}
-        onCancel={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
+        isOpen={deleteConfirm.open}
+        title="Delete Coupon?"
+        message="Are you sure you want to delete this coupon? This cannot be undone."
+        confirmText="Delete"
+        onConfirm={async () => {
+          await handleDelete(deleteConfirm.id);
+          setDeleteConfirm({ open: false, id: null });
+        }}
+        onCancel={() => setDeleteConfirm({ open: false, id: null })}
+        type="danger"
       />
-    </>
+    </div>
   );
 };
 
 export default DiscountsPackages;
-
-
-

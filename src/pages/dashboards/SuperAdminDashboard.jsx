@@ -7,6 +7,7 @@ import AdminUsers from './components/AdminUsers';
 import RolesPermissions from './components/RolesPermissions';
 import BookingManagement from './components/BookingManagement';
 import DiscountsPackages from './components/DiscountsPackages';
+import GuestManagement from './components/GuestManagement';
 import FinancialManagement from './components/FinancialManagement';
 import ReportingAnalytics from './components/ReportingAnalytics';
 import ActivityLogs from './components/ActivityLogs';
@@ -21,17 +22,22 @@ const SuperAdminDashboard = () => {
   // Define sections and their corresponding modules
   const sections = [
     // { id: 'dashboard', module: 'dashboard' },
+    { id: 'reporting', module: 'reporting' },
     { id: 'stays', module: 'stayManagement' },
     { id: 'users', module: 'adminUsers' },
     { id: 'roles', module: 'rolesPermissions' },
     { id: 'bookings', module: 'bookings' },
+    { id: 'guests', module: 'bookings' },
     { id: 'discounts', module: 'discounts' },
     { id: 'transactions', module: 'transactions' },
     { id: 'financial-setting', module: 'financialSetting' },
-    { id: 'reporting', module: 'reporting' },
     { id: 'logs', module: 'logs' },
     { id: 'faqs', module: 'faqs' }
   ];
+
+  // Default landing section after login: Reporting & Analytics (falls back to
+  // the first section the user is permitted to view).
+  const DEFAULT_SECTION = 'reporting';
 
   const isSuperAdmin = user?.role === 'Super Admin' || (typeof user?.role === 'object' && user?.role?.name === 'Super Admin');
 
@@ -48,6 +54,11 @@ const SuperAdminDashboard = () => {
     const savedSection = localStorage.getItem('superAdminActiveSection');
     if (savedSection && isSectionPermitted(savedSection)) {
       return savedSection;
+    }
+    // Prefer Reporting & Analytics as the landing view; fall back to the first
+    // permitted section if this admin can't view reporting.
+    if (isSectionPermitted(DEFAULT_SECTION)) {
+      return DEFAULT_SECTION;
     }
     return permittedSections[0]?.id || 'stays';
   });
@@ -83,6 +94,7 @@ const SuperAdminDashboard = () => {
             {activeSection === 'users' && <AdminUsers />}
             {activeSection === 'roles' && <RolesPermissions />}
             {activeSection === 'bookings' && <BookingManagement />}
+            {activeSection === 'guests' && <GuestManagement />}
             {activeSection === 'discounts' && <DiscountsPackages />}
             {activeSection === 'transactions' && <FinancialManagement />}
             {activeSection === 'financial-setting' && <PlatformFee />}

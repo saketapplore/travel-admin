@@ -1,445 +1,289 @@
 import React, { useState } from 'react';
-import CustomTable from '../../../components/CustomTable';
-import { TrendingUp, Users, Moon, CircleDollarSign, BarChart3, Calendar } from 'lucide-react';
+import {
+  BarChart3,
+  CalendarDays,
+  CheckCircle2,
+  XCircle,
+  CircleDollarSign,
+  RefreshCw,
+  BedDouble,
+  Hotel,
+  Plane,
+  Layers,
+  ArrowLeftRight,
+  Building2,
+  DoorOpen,
+  Briefcase
+} from 'lucide-react';
+import { useReporting } from './useReporting';
+import CheckInsCheckouts from './CheckInsCheckouts';
+import OccupancySummary from './OccupancySummary';
+import VacantProperties from './VacantProperties';
+import CorporateBookings from './CorporateBookings';
+
+const inr = (n) =>
+  new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    maximumFractionDigits: 0
+  }).format(Number(n || 0));
+
+const num = (n) => new Intl.NumberFormat('en-IN').format(Number(n || 0));
+
+const VIEWS = [
+  { id: 'consolidated', label: 'Consolidated', icon: Layers },
+  { id: 'stays', label: 'Stays', icon: BedDouble },
+  { id: 'hotels', label: 'Hotels', icon: Hotel },
+  { id: 'flights', label: 'Flights', icon: Plane }
+];
+
+const EMPTY = { total: 0, confirmed: 0, cancelled: 0, bookingValue: 0 };
+
+const MetricCard = ({ icon: Icon, label, value, tone }) => {
+  const tones = {
+    blue: 'bg-blue-50 text-blue-600',
+    green: 'bg-green-50 text-green-600',
+    red: 'bg-red-50 text-red-600',
+    orange: 'bg-orange-50 text-orange-600'
+  };
+  return (
+    <div className="bg-white rounded-3xl shadow-md p-6 border border-gray-100">
+      <div className="flex items-center justify-between">
+        <div className="min-w-0">
+          <p className="text-gray-500 text-sm font-medium">{label}</p>
+          <p className="text-3xl font-black text-gray-800 mt-1 truncate">{value}</p>
+        </div>
+        <div className={`p-3 rounded-2xl flex-shrink-0 ${tones[tone] || tones.blue}`}>
+          <Icon className="w-7 h-7" />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const SECTIONS = [
+  { id: 'overview', label: 'Bookings Overview', icon: BarChart3 },
+  { id: 'movements', label: 'Check-ins & Check-outs', icon: ArrowLeftRight },
+  { id: 'occupancy', label: 'Occupancy', icon: Building2 },
+  { id: 'vacant', label: 'Vacant Properties', icon: DoorOpen },
+  { id: 'corporate', label: 'Corporate', icon: Briefcase }
+];
 
 const ReportingAnalytics = () => {
-  const [reportingSubSection, setReportingSubSection] = useState('reports');
+  const [section, setSection] = useState('overview');
+  const {
+    from,
+    setFrom,
+    to,
+    setTo,
+    view,
+    setView,
+    setPreset,
+    summary,
+    loading,
+    error,
+    lastUpdated,
+    refresh
+  } = useReporting();
 
-  const [reportFilters, setReportFilters] = useState({
-    dateFrom: '2024-01-01',
-    dateTo: '2024-12-31',
-    reportType: 'All'
-  });
+  const modules = summary?.modules || {};
+  const selected =
+    view === 'consolidated' ? summary?.consolidated || EMPTY : modules[view] || EMPTY;
 
-  // Sample analytics data
-  const analyticsData = {
-    nightsBooked: 245,
-    revenueEarned: 83780,
-    totalRooms: 50,
-    occupiedRooms: 38,
-    occupancyPercentage: 76,
-    monthlyTrends: [
-      { month: 'Jan', nights: 45, revenue: 12500, bookings: 12 },
-      { month: 'Feb', nights: 52, revenue: 14500, bookings: 15 },
-      { month: 'Mar', nights: 48, revenue: 13800, bookings: 14 },
-      { month: 'Apr', nights: 55, revenue: 16200, bookings: 18 },
-      { month: 'May', nights: 45, revenue: 13200, bookings: 13 }
-    ]
-  };
-
-  const staffPerformance = [
-    {
-      id: 1,
-      name: 'John Manager',
-      role: 'Property Manager',
-      assignedBookings: 25,
-      completedTasks: 48,
-      pendingTasks: 5,
-      completionRate: 90.6,
-      revenueGenerated: 45000
-    },
-    {
-      id: 2,
-      name: 'Sarah Coordinator',
-      role: 'Booking Manager',
-      assignedBookings: 32,
-      completedTasks: 62,
-      pendingTasks: 3,
-      completionRate: 95.4,
-      revenueGenerated: 58000
-    },
-    {
-      id: 3,
-      name: 'Mike Supervisor',
-      role: 'Staff Manager',
-      assignedBookings: 18,
-      completedTasks: 35,
-      pendingTasks: 8,
-      completionRate: 81.4,
-      revenueGenerated: 32000
-    },
-    {
-      id: 4,
-      name: 'Emily Assistant',
-      role: 'Property Manager',
-      assignedBookings: 20,
-      completedTasks: 40,
-      pendingTasks: 2,
-      completionRate: 95.2,
-      revenueGenerated: 38000
-    }
-  ];
-
-  const isRevenueReport =
-    reportFilters.reportType === 'All' || reportFilters.reportType === 'Revenue';
-  const isOccupancyReport =
-    reportFilters.reportType === 'All' || reportFilters.reportType === 'Occupancy';
-  const isBookingsReport =
-    reportFilters.reportType === 'All' || reportFilters.reportType === 'Bookings';
-
-  const staffPerformanceColumns = [
-    {
-      key: 'name',
-      header: 'Staff Name',
-      accessor: 'name',
-      cellClassName: 'text-sm font-medium text-gray-900'
-    },
-    {
-      key: 'role',
-      header: 'Role',
-      accessor: 'role',
-      cellClassName: 'text-sm text-gray-500'
-    },
-    {
-      key: 'assignedBookings',
-      header: 'Assigned Bookings',
-      accessor: 'assignedBookings',
-      cellClassName: 'text-sm text-gray-500 font-medium'
-    },
-    {
-      key: 'completedTasks',
-      header: 'Completed Tasks',
-      accessor: 'completedTasks',
-      cellClassName: 'text-sm text-gray-500 font-medium'
-    },
-    {
-      key: 'pendingTasks',
-      header: 'Pending Tasks',
-      accessor: 'pendingTasks',
-      cellClassName: 'text-sm text-gray-500'
-    },
-    {
-      key: 'completionRate',
-      header: 'Completion Rate',
-      accessor: 'completionRate',
-      render: (value) => (
-        <div className="flex items-center">
-          <div className="w-16 bg-gray-200 rounded-full h-2 mr-2">
-            <div
-              className={`h-2 rounded-full ${
-                value >= 90 ? 'bg-green-500' : value >= 75 ? 'bg-yellow-500' : 'bg-red-500'
-              }`}
-              style={{ width: `${value}%` }}
-            ></div>
-          </div>
-          <span className="text-sm font-medium text-gray-700">{value}%</span>
-        </div>
-      )
-    },
-    {
-      key: 'revenueGenerated',
-      header: 'Revenue Generated',
-      accessor: 'revenueGenerated',
-      render: (value) => `₹${value.toLocaleString('en-IN')}`,
-      cellClassName: 'text-sm font-semibold text-gray-900'
-    }
+  const breakdown = [
+    { id: 'total', label: 'Total Bookings', value: summary?.consolidated?.total ?? 0, icon: Layers, tone: 'orange' },
+    { id: 'stays', label: 'Stays', value: modules.stays?.total ?? 0, icon: BedDouble, tone: 'blue' },
+    { id: 'hotels', label: 'Hotels', value: modules.hotels?.total ?? 0, icon: Hotel, tone: 'blue' },
+    { id: 'flights', label: 'Flights', value: modules.flights?.total ?? 0, icon: Plane, tone: 'blue' }
   ];
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 w-full max-w-full overflow-hidden">
-      <div className="mb-6">
-        <h3 className="text-xl font-semibold text-gray-800 mb-4">Reporting & Analytics</h3>
-        <div className="flex space-x-3 mb-6 bg-gray-50 p-1.5 rounded-2xl w-fit border border-gray-100">
-          <button
-            onClick={() => setReportingSubSection('reports')}
-            className={`px-8 py-2.5 rounded-xl font-bold transition-all duration-300 flex items-center gap-2.5 ${
-              reportingSubSection === 'reports'
-                ? 'bg-orange-500 text-white shadow-md'
-                : 'text-gray-500 hover:bg-white hover:text-orange-600'
-            }`}
-          >
-            <TrendingUp className="w-5 h-5" />
-            <span>Reports</span>
-          </button>
-          <button
-            onClick={() => setReportingSubSection('staff')}
-            className={`px-8 py-2.5 rounded-xl font-bold transition-all duration-300 flex items-center gap-2.5 ${
-              reportingSubSection === 'staff'
-                ? 'bg-orange-500 text-white shadow-md'
-                : 'text-gray-500 hover:bg-white hover:text-orange-600'
-            }`}
-          >
-            <Users className="w-5 h-5" />
-            <span>Staff Performance</span>
-          </button>
+    <div className="space-y-6">
+      {/* Section tabs (Point 4 overview ↔ Point 5 movements) */}
+      <div className="bg-white rounded-3xl shadow-md p-2 border border-gray-100 inline-flex flex-wrap gap-1">
+        {SECTIONS.map((s) => {
+          const Icon = s.icon;
+          const active = section === s.id;
+          return (
+            <button
+              key={s.id}
+              onClick={() => setSection(s.id)}
+              className={`px-5 py-2.5 rounded-2xl text-sm font-bold transition-all flex items-center gap-2 ${
+                active
+                  ? 'bg-orange-500 text-white shadow-md'
+                  : 'text-gray-500 hover:bg-orange-50 hover:text-orange-600'
+              }`}
+            >
+              <Icon className="w-4 h-4" />
+              {s.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {section === 'movements' ? (
+        <CheckInsCheckouts />
+      ) : section === 'occupancy' ? (
+        <OccupancySummary />
+      ) : section === 'vacant' ? (
+        <VacantProperties />
+      ) : section === 'corporate' ? (
+        <CorporateBookings />
+      ) : (
+        <>
+      {/* Header */}
+      <div className="bg-white rounded-3xl shadow-md p-6 border border-gray-100">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-orange-50 rounded-2xl">
+              <BarChart3 className="w-7 h-7 text-orange-500" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-black text-gray-800 tracking-tight">
+                Reporting &amp; Analytics
+              </h2>
+              <p className="text-sm text-gray-500">
+                Consolidated bookings across Stays, Hotels &amp; Flights
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-end gap-3">
+            <div>
+              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">
+                From
+              </label>
+              <input
+                type="date"
+                value={from}
+                max={to}
+                onChange={(e) => setFrom(e.target.value)}
+                className="px-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-sm font-bold text-gray-700 focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">
+                To
+              </label>
+              <input
+                type="date"
+                value={to}
+                min={from}
+                onChange={(e) => setTo(e.target.value)}
+                className="px-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-sm font-bold text-gray-700 focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 outline-none"
+              />
+            </div>
+            <button
+              onClick={refresh}
+              disabled={loading}
+              className="px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold text-sm transition-all active:scale-95 disabled:opacity-50 flex items-center gap-2"
+              title="Refresh now"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
+            </button>
+          </div>
+        </div>
+
+        {/* Presets + status line */}
+        <div className="flex flex-wrap items-center justify-between gap-3 mt-4 pt-4 border-t border-gray-100">
+          <div className="flex items-center gap-2">
+            {[
+              { id: 'thisMonth', label: 'This Month' },
+              { id: 'lastMonth', label: 'Last Month' },
+              { id: 'last7', label: 'Last 7 Days' }
+            ].map((p) => (
+              <button
+                key={p.id}
+                onClick={() => setPreset(p.id)}
+                className="px-3 py-1.5 text-xs font-bold rounded-full bg-gray-50 text-gray-500 hover:bg-orange-50 hover:text-orange-600 transition-colors"
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-gray-400 flex items-center gap-1.5">
+            <CalendarDays className="w-3.5 h-3.5" />
+            {lastUpdated
+              ? `Updated ${lastUpdated.toLocaleTimeString()} · auto-refreshes every 60s`
+              : 'Loading…'}
+          </p>
         </div>
       </div>
 
-      {/* Reports Section */}
-      {reportingSubSection === 'reports' && (
-        <>
-          {/* Date Filters */}
-          <div className="bg-gray-50 rounded-lg p-4 mb-6 border border-gray-200">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Date From</label>
-                <input
-                  type="date"
-                  value={reportFilters.dateFrom}
-                  onChange={(e) => setReportFilters({ ...reportFilters, dateFrom: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Date To</label>
-                <input
-                  type="date"
-                  value={reportFilters.dateTo}
-                  onChange={(e) => setReportFilters({ ...reportFilters, dateTo: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Report Type</label>
-                <select
-                  value={reportFilters.reportType}
-                  onChange={(e) =>
-                    setReportFilters({ ...reportFilters, reportType: e.target.value })
-                  }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                >
-                  <option value="All">All Reports</option>
-                  <option value="Revenue">Revenue Report</option>
-                  <option value="Occupancy">Occupancy Report</option>
-                  <option value="Bookings">Bookings Report</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {/* Key Metrics Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            {(isBookingsReport || isOccupancyReport) && (
-              <div className="bg-blue-50 rounded-lg shadow-md p-5 border border-blue-200">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <p className="text-gray-600 text-sm font-medium mb-1">Nights Booked</p>
-                    <p className="text-2xl lg:text-3xl font-bold text-gray-800">
-                      {analyticsData.nightsBooked}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">Total nights</p>
-                  </div>
-                  <div className="p-3 bg-blue-200/50 rounded-lg">
-                    <Moon className="w-8 h-8 text-blue-700" />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {isRevenueReport && (
-              <div className="bg-green-50 rounded-lg shadow-md p-5 border border-green-200">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <p className="text-gray-600 text-sm font-medium mb-1">Revenue Earned</p>
-                    <p className="text-2xl lg:text-3xl font-bold text-gray-800">
-                      ₹{analyticsData.revenueEarned.toLocaleString('en-IN')}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">Total revenue</p>
-                  </div>
-                  <div className="p-3 bg-green-200/50 rounded-lg">
-                    <CircleDollarSign className="w-8 h-8 text-green-700" />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {isOccupancyReport && (
-              <div className="bg-purple-50 rounded-lg shadow-md p-5 border border-purple-200">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <p className="text-gray-600 text-sm font-medium mb-1">Occupancy %</p>
-                    <p className="text-2xl lg:text-3xl font-bold text-gray-800">
-                      {analyticsData.occupancyPercentage}%
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {analyticsData.occupiedRooms}/{analyticsData.totalRooms} rooms
-                    </p>
-                  </div>
-                  <div className="p-3 bg-purple-200/50 rounded-lg">
-                    <BarChart3 className="w-8 h-8 text-purple-700" />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {isBookingsReport && (
-              <div className="bg-orange-50 rounded-lg shadow-md p-5 border border-orange-200">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <p className="text-gray-600 text-sm font-medium mb-1">Total Bookings</p>
-                    <p className="text-2xl lg:text-3xl font-bold text-gray-800">
-                      {analyticsData.monthlyTrends.reduce((sum, m) => sum + m.bookings, 0)}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">All time</p>
-                  </div>
-                  <div className="p-3 bg-orange-200/50 rounded-lg">
-                    <Calendar className="w-8 h-8 text-orange-700" />
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Booking Trends Chart */}
-          {(isBookingsReport || isOccupancyReport) && (
-            <div className="bg-gray-50 rounded-lg p-6 mb-6 border border-gray-200">
-              <h4 className="text-lg font-semibold text-gray-800 mb-4">Monthly Booking Trends</h4>
-              <div className="space-y-4">
-                {analyticsData.monthlyTrends.map((month, index) => (
-                  <div key={index} className="bg-white rounded-lg p-4 border border-gray-200">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-gray-700">{month.month}</span>
-                      <span className="text-sm text-gray-500">{month.bookings} bookings</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-4 mb-2">
-                      <div
-                        className="bg-orange-500 h-4 rounded-full"
-                        style={{ width: `${(month.bookings / 20) * 100}%` }}
-                      ></div>
-                    </div>
-                    <div className="flex justify-between text-xs text-gray-500">
-                      <span>{month.nights} nights</span>
-                      <span>₹{month.revenue.toLocaleString('en-IN')}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Revenue Chart */}
-          {isRevenueReport && (
-            <div className="bg-gray-50 rounded-lg p-6 mb-6 border border-gray-200">
-              <h4 className="text-lg font-semibold text-gray-800 mb-4">Revenue Trends</h4>
-              <div className="space-y-4">
-                {analyticsData.monthlyTrends.map((month, index) => (
-                  <div key={index} className="bg-white rounded-lg p-4 border border-gray-200">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-gray-700">{month.month}</span>
-                      <span className="text-sm font-semibold text-gray-800">
-                        ₹{month.revenue.toLocaleString('en-IN')}
-                      </span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-4">
-                      <div
-                        className="bg-green-500 h-4 rounded-full"
-                        style={{ width: `${(month.revenue / 20000) * 100}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Export Options */}
-          <div className="flex justify-end space-x-3">
-            <button
-              onClick={() => {
-                const reportData = {
-                  period: `${reportFilters.dateFrom} to ${reportFilters.dateTo}`,
-                  nightsBooked: analyticsData.nightsBooked,
-                  revenueEarned: analyticsData.revenueEarned,
-                  occupancyPercentage: analyticsData.occupancyPercentage,
-                  monthlyTrends: analyticsData.monthlyTrends
-                };
-                const reportText = `
-REPORTING & ANALYTICS REPORT
-Period: ${reportData.period}
-
-KEY METRICS:
-- Nights Booked: ${reportData.nightsBooked}
-- Revenue Earned: ₹${reportData.revenueEarned.toLocaleString('en-IN')}
-- Occupancy Percentage: ${reportData.occupancyPercentage}%
-- Total Rooms: ${analyticsData.totalRooms}
-- Occupied Rooms: ${analyticsData.occupiedRooms}
-
-MONTHLY TRENDS:
-${reportData.monthlyTrends.map((m) => `${m.month}: ${m.bookings} bookings, ${m.nights} nights, ₹${m.revenue.toLocaleString('en-IN')}`).join('\n')}
-
-Generated on: ${new Date().toLocaleString('en-IN')}
-            `;
-                const blob = new Blob([reportText], { type: 'text/plain' });
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = `Analytics_Report_${new Date().toISOString().split('T')[0]}.txt`;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                URL.revokeObjectURL(url);
-              }}
-              className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2.5 rounded-2xl font-bold transition-all duration-300 shadow-md active:scale-95"
-            >
-              📄 Export Report
-            </button>
-          </div>
-        </>
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-5 py-3 rounded-2xl text-sm font-semibold">
+          {error}
+        </div>
       )}
 
-      {/* Staff Performance Section */}
-      {reportingSubSection === 'staff' && (
-        <>
-          <div className="mb-6">
-            <h4 className="text-lg font-semibold text-gray-800 mb-4">Staff Performance Metrics</h4>
-            <p className="text-sm text-gray-600">
-              View performance metrics based on assigned bookings and tasks completed
-            </p>
-          </div>
+      {/* Total bookings breakdown */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {breakdown.map((b) => (
+          <MetricCard
+            key={b.id}
+            icon={b.icon}
+            label={b.label}
+            value={loading && !summary ? '…' : num(b.value)}
+            tone={b.tone}
+          />
+        ))}
+      </div>
 
-          <div className="-mx-6 px-6">
-            <CustomTable
-              columns={staffPerformanceColumns}
-              data={staffPerformance}
-              emptyMessage="No staff performance data available"
-              tableClassName="w-full"
-              containerClassName="overflow-x-auto"
-              minWidth="1000px"
-            />
-          </div>
-
-          {/* Export Staff Performance */}
-          <div className="mt-6 flex justify-end space-x-3">
+      {/* View switcher */}
+      <div className="bg-white rounded-3xl shadow-md p-2 border border-gray-100 inline-flex flex-wrap gap-1">
+        {VIEWS.map((v) => {
+          const Icon = v.icon;
+          const active = view === v.id;
+          return (
             <button
-              onClick={() => {
-                const csvContent = [
-                  [
-                    'Staff Name',
-                    'Role',
-                    'Assigned Bookings',
-                    'Completed Tasks',
-                    'Pending Tasks',
-                    'Completion Rate %',
-                    'Revenue Generated'
-                  ],
-                  ...staffPerformance.map((s) => [
-                    s.name,
-                    s.role,
-                    s.assignedBookings,
-                    s.completedTasks,
-                    s.pendingTasks,
-                    s.completionRate,
-                    s.revenueGenerated
-                  ])
-                ]
-                  .map((row) => row.join(','))
-                  .join('\n');
-
-                const blob = new Blob([csvContent], { type: 'text/csv' });
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = `Staff_Performance_${new Date().toISOString().split('T')[0]}.csv`;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                URL.revokeObjectURL(url);
-              }}
-              className="bg-gray-100 hover:bg-gray-200 text-gray-600 px-6 py-2.5 rounded-2xl font-bold transition-all duration-200 border border-gray-200 hover:border-orange-200"
+              key={v.id}
+              onClick={() => setView(v.id)}
+              className={`px-5 py-2.5 rounded-2xl text-sm font-bold transition-all flex items-center gap-2 ${
+                active
+                  ? 'bg-orange-500 text-white shadow-md'
+                  : 'text-gray-500 hover:bg-orange-50 hover:text-orange-600'
+              }`}
             >
-              📊 Export to CSV
+              <Icon className="w-4 h-4" />
+              {v.label}
             </button>
-          </div>
+          );
+        })}
+      </div>
+
+      {/* Metrics for the selected view */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <MetricCard
+          icon={Layers}
+          label="Total Bookings"
+          value={loading && !summary ? '…' : num(selected.total)}
+          tone="blue"
+        />
+        <MetricCard
+          icon={CheckCircle2}
+          label="Confirmed"
+          value={loading && !summary ? '…' : num(selected.confirmed)}
+          tone="green"
+        />
+        <MetricCard
+          icon={XCircle}
+          label="Cancelled"
+          value={loading && !summary ? '…' : num(selected.cancelled)}
+          tone="red"
+        />
+        <MetricCard
+          icon={CircleDollarSign}
+          label="Booking Value"
+          value={loading && !summary ? '…' : inr(selected.bookingValue)}
+          tone="orange"
+        />
+      </div>
+
+      <p className="text-xs text-gray-400 px-1">
+        Booking Value reflects confirmed bookings only.
+        {view !== 'consolidated' && ` Showing ${view} only.`}
+      </p>
         </>
       )}
     </div>

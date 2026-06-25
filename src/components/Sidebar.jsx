@@ -13,7 +13,8 @@ import {
   History,
   HelpCircle,
   BadgePercent,
-  LayoutDashboard
+  LayoutDashboard,
+  UserX
 } from 'lucide-react';
 
 const Sidebar = ({ activeSection, setActiveSection }) => {
@@ -29,10 +30,12 @@ const Sidebar = ({ activeSection, setActiveSection }) => {
 
   const menuItems = [
     // { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" />, module: 'dashboard' },
+    { id: 'reporting', label: 'Reporting & Analytics', icon: <BarChart3 className="w-5 h-5" />, module: 'reporting' },
     { id: 'stays', label: 'Stay Management', icon: <Hotel className="w-5 h-5" />, module: 'stayManagement' },
     { id: 'users', label: 'Admin Users', icon: <User className="w-5 h-5" />, module: 'adminUsers' },
     { id: 'roles', label: 'Roles & Permissions', icon: <ShieldCheck className="w-5 h-5" />, module: 'rolesPermissions' },
     { id: 'bookings', label: 'Booking Management', icon: <CalendarDays className="w-5 h-5" />, module: 'bookings' },
+    { id: 'guests', label: 'Guest Management', icon: <UserX className="w-5 h-5" />, module: 'bookings' },
     { id: 'discounts', label: 'Discounts & Packages', icon: <Gift className="w-5 h-5" />, module: 'discounts' },
     { id: 'transactions', label: 'Transactions', icon: <CircleDollarSign className="w-5 h-5" />, module: 'transactions' },
     {
@@ -54,7 +57,6 @@ const Sidebar = ({ activeSection, setActiveSection }) => {
         </div>
       )
     },
-    { id: 'reporting', label: 'Reporting & Analytics', icon: <BarChart3 className="w-5 h-5" />, module: 'reporting' },
     { id: 'logs', label: 'Activity Logs', icon: <History className="w-5 h-5" />, module: 'logs' },
     { id: 'faqs', label: 'FAQs', icon: <HelpCircle className="w-5 h-5" />, module: 'faqs' }
   ];

@@ -50,6 +50,9 @@ export const AuthProvider = ({ children }) => {
 
         setUser(userData);
         localStorage.setItem('adminUser', JSON.stringify(userData));
+        // Reset the remembered dashboard tab so a fresh login always lands on
+        // the default landing view (Reporting & Analytics).
+        localStorage.removeItem('superAdminActiveSection');
         return { success: true };
       }
 

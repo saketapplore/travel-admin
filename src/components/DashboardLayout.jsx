@@ -2,8 +2,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { userService } from '../services/userService';
-import { UserCircle, LogOut } from 'lucide-react';
+import { UserCircle, LogOut, BedDouble, Plane } from 'lucide-react';
 import logo from '../assets/logo.png';
+import NotificationBell from './NotificationBell';
+import { useAdminNotifications } from '../hooks/useAdminNotifications';
 
 const DashboardLayout = ({ children }) => {
   const { user, logout, refreshUser } = useAuth();
@@ -14,6 +16,7 @@ const DashboardLayout = ({ children }) => {
   const [updating, setUpdating] = useState(false);
   const [error, setError] = useState('');
   const dropdownRef = useRef(null);
+  const { bells, markRead } = useAdminNotifications();
 
   const isSuperAdminOrAdmin = () => {
     let roleKey = user?.roleKey;
@@ -129,6 +132,19 @@ const DashboardLayout = ({ children }) => {
               </div>
             </div>
             <div className="flex items-center space-x-4">
+              {/* Real-time notification bells: Stay By TR + Hotel & Flight */}
+              <div className="flex items-center gap-2">
+                <NotificationBell
+                  icon={BedDouble}
+                  label="Stay By TR"
+                  bell={{ ...bells.stays, onOpen: () => markRead('stays') }}
+                />
+                <NotificationBell
+                  icon={Plane}
+                  label="Hotel & Flight"
+                  bell={{ ...bells.travel, onOpen: () => markRead('travel') }}
+                />
+              </div>
               <div className="text-right">
                 <p className="font-semibold">{user?.role?.name || (typeof user?.role === 'string' ? user.role : 'Admin')}</p>
                 <p className="text-sm text-orange-100">{user?.email}</p>

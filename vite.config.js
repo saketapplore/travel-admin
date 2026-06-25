@@ -12,6 +12,9 @@ export default defineConfig({
     }
   },
   server: {
+    // Allow the dev server to be reached via tunnels (ngrok, etc.). A leading
+    // dot whitelists a domain and all its subdomains.
+    allowedHosts: ['.ngrok-free.dev', '.ngrok.app', '.ngrok.io', 'localhost'],
     proxy: {
       '/api': {
         // target: 'https://martha-insightful-genevie.ngrok-free.dev',

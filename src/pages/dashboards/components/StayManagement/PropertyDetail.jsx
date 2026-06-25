@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   X,
   MapPin,
@@ -21,9 +21,13 @@ import {
   Edit3,
   Calendar,
   Plus,
-  Trash2
+  Trash2,
+  Save
 } from 'lucide-react';
 import ImageUploader from './ImageUploader';
+import CategoryPhotoManager from './CategoryPhotoManager';
+import AmenityManager from './AmenityManager';
+import { seedPhotoCategories } from '@/constants/photoCategories';
 import EditPropertyModal from './EditPropertyModal';
 import EditRoomModal from './EditRoomModal';
 import CalendarModal from './CalendarModal';
@@ -76,6 +80,78 @@ const PropertyDetail = ({
   const [addRoomOpen, setAddRoomOpen] = useState(false);
   const [activeRoomToEdit, setActiveRoomToEdit] = useState(null);
   const [deletingProperty, setDeletingProperty] = useState(false);
+
+  // Category-wise property photos (Point 8). Seeded from the property's
+  // photoCategories, falling back to the legacy flat images.
+  const [photoCats, setPhotoCats] = useState([]);
+  const [photosDirty, setPhotosDirty] = useState(false);
+  const [savingPhotos, setSavingPhotos] = useState(false);
+  const [photosSaved, setPhotosSaved] = useState(false);
+
+  useEffect(() => {
+    if (property) {
+      setPhotoCats(seedPhotoCategories(property.photoCategories, property.images));
+      setPhotosDirty(false);
+      setPhotosSaved(false);
+    }
+  }, [property?.id, property?._id]);
+
+  const handleSavePhotos = async () => {
+    setSavingPhotos(true);
+    try {
+      // Drop categories that ended up with no photos and no description.
+      const cleaned = (photoCats || []).filter(
+        (c) => (c.images?.length || 0) > 0 || (c.description || '').trim()
+      );
+      await onUpdatePropertyDetail(property._id || property.id, { photoCategories: cleaned });
+      setPhotosDirty(false);
+      setPhotosSaved(true);
+      setTimeout(() => setPhotosSaved(false), 3000);
+    } catch (err) {
+      console.error('Save photos error:', err);
+    } finally {
+      setSavingPhotos(false);
+    }
+  };
+
+  // Search Filter Amenities + property description (Point 9).
+  // Display amenities now come from each room's own amenities (not configured here).
+  const [amenityData, setAmenityData] = useState({ searchFilterAmenities: [] });
+  const [propDescription, setPropDescription] = useState('');
+  const [amenitiesDirty, setAmenitiesDirty] = useState(false);
+  const [savingAmenities, setSavingAmenities] = useState(false);
+  const [amenitiesSaved, setAmenitiesSaved] = useState(false);
+
+  useEffect(() => {
+    if (property) {
+      setAmenityData({
+        searchFilterAmenities: property.searchFilterAmenities || []
+      });
+      setPropDescription(property.description || '');
+      setAmenitiesDirty(false);
+      setAmenitiesSaved(false);
+    }
+  }, [property?.id, property?._id]);
+
+  const handleSaveAmenities = async () => {
+    setSavingAmenities(true);
+    try {
+      await onUpdatePropertyDetail(property._id || property.id, {
+        searchFilterAmenities: amenityData.searchFilterAmenities,
+        // Clear any previously-configured property-level display amenities —
+        // the app now uses each room's amenities for display.
+        displayAmenities: [],
+        description: propDescription
+      });
+      setAmenitiesDirty(false);
+      setAmenitiesSaved(true);
+      setTimeout(() => setAmenitiesSaved(false), 3000);
+    } catch (err) {
+      console.error('Save amenities error:', err);
+    } finally {
+      setSavingAmenities(false);
+    }
+  };
 
   if (!property) return null;
 
@@ -322,22 +398,91 @@ const PropertyDetail = ({
             </section>
           )}
 
-          {/* Property Images */}
+          {/* Property Images — category-wise (Point 8) */}
           <section className="mt-6">
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
-              Property Images
-            </h3>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                Property Photos
+              </h3>
+              <div className="flex items-center gap-2">
+                {photosSaved && !photosDirty && (
+                  <span className="text-xs font-semibold text-emerald-600">Saved</span>
+                )}
+                {photosDirty && (
+                  <button
+                    onClick={handleSavePhotos}
+                    disabled={savingPhotos}
+                    className="flex items-center gap-1.5 text-xs font-bold px-4 py-1.5 rounded-full bg-orange-500 text-white hover:bg-orange-600 transition-all disabled:opacity-50 shadow-sm"
+                  >
+                    {savingPhotos ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
+                    {savingPhotos ? 'Saving…' : 'Save Photos'}
+                  </button>
+                )}
+              </div>
+            </div>
             <div className="p-4 bg-gray-50/80 border border-gray-100 rounded-2xl">
-              <ImageUploader
-                images={property.images || []}
-                onSave={(images) => onUpdateImages(property.id, images)}
-                saving={
-                  updatingImages &&
-                  imageUpdateTarget?.propertyId === property.id &&
-                  !imageUpdateTarget?.roomId
-                }
-                label="Property Photos"
+              <CategoryPhotoManager
+                value={photoCats}
+                onChange={(next) => {
+                  setPhotoCats(next);
+                  setPhotosDirty(true);
+                  setPhotosSaved(false);
+                }}
               />
+            </div>
+          </section>
+
+          {/* Amenities & Description (Point 9) */}
+          <section className="mt-6">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                Amenities &amp; Description
+              </h3>
+              <div className="flex items-center gap-2">
+                {amenitiesSaved && !amenitiesDirty && (
+                  <span className="text-xs font-semibold text-emerald-600">Saved</span>
+                )}
+                {amenitiesDirty && (
+                  <button
+                    onClick={handleSaveAmenities}
+                    disabled={savingAmenities}
+                    className="flex items-center gap-1.5 text-xs font-bold px-4 py-1.5 rounded-full bg-orange-500 text-white hover:bg-orange-600 transition-all disabled:opacity-50 shadow-sm"
+                  >
+                    {savingAmenities ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
+                    {savingAmenities ? 'Saving…' : 'Save'}
+                  </button>
+                )}
+              </div>
+            </div>
+            <div className="p-4 bg-gray-50/80 border border-gray-100 rounded-2xl space-y-5">
+              <AmenityManager
+                value={amenityData}
+                onChange={(next) => {
+                  setAmenityData(next);
+                  setAmenitiesDirty(true);
+                  setAmenitiesSaved(false);
+                }}
+              />
+              <div className="h-px bg-gray-100" />
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                  Property Description
+                </label>
+                <p className="text-xs text-gray-400 mb-2">
+                  Shown on the property details page (with a “Show More” option in the app).
+                </p>
+                <textarea
+                  value={propDescription}
+                  onChange={(e) => {
+                    setPropDescription(e.target.value);
+                    setAmenitiesDirty(true);
+                    setAmenitiesSaved(false);
+                  }}
+                  placeholder="Describe the property…"
+                  rows={4}
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none resize-y"
+                />
+              </div>
             </div>
           </section>
 
