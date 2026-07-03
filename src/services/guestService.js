@@ -14,7 +14,19 @@ export const guestService = {
     return api.get(`/guests/blocked${qs ? `?${qs}` : ''}`);
   },
   block: (data) => api.post('/guests/block', data),
-  unblock: (id) => api.post(`/guests/unblock/${id}`)
+  unblock: (id) => api.post(`/guests/unblock/${id}`),
+
+  // App users with current Active/Blocked status + per-user block/unblock.
+  getUsers: (params = {}) => {
+    const qp = new URLSearchParams();
+    if (params.page) qp.append('page', params.page);
+    if (params.limit) qp.append('limit', params.limit);
+    if (params.search) qp.append('search', params.search);
+    const qs = qp.toString();
+    return api.get(`/guests/users${qs ? `?${qs}` : ''}`);
+  },
+  blockUser: (id, reason) => api.post(`/guests/users/${id}/block`, { reason }),
+  unblockUser: (id) => api.post(`/guests/users/${id}/unblock`)
 };
 
 export default guestService;

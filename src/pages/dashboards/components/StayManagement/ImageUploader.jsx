@@ -1,17 +1,15 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { Upload, X, Image as ImageIcon, Plus, Loader2, Link, CheckCircle2, GripVertical, Star } from 'lucide-react';
+import { Upload, X, Image as ImageIcon, Loader2, CheckCircle2, GripVertical, Star } from 'lucide-react';
 import { trStaysService } from '../../../../services/trStaysService';
 
 /**
- * ImageUploader - Displays existing images and allows adding via:
- *   1. Paste URL
- *   2. Upload from computer (drag & drop or click to browse)
- *
+ * ImageUploader - Displays existing images and allows adding via
+ * upload from computer (drag & drop or click to browse).
  * Uploaded files are sent to S3 via the backend, returning URLs.
  */
 const ImageUploader = ({ images = [], onSave, onChange, saving = false, label = 'Images' }) => {
   const [imageUrls, setImageUrls] = useState([...images]);
-  const [newUrl, setNewUrl] = useState('');
+
   const [isDirty, setIsDirty] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -22,7 +20,6 @@ const ImageUploader = ({ images = [], onSave, onChange, saving = false, label = 
   const [isSaving, setIsSaving] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
-  const urlInputRef = useRef(null);
   const fileInputRef = useRef(null);
   const isFirstRender = useRef(true);
 
@@ -48,21 +45,6 @@ const ImageUploader = ({ images = [], onSave, onChange, saving = false, label = 
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(imageUrls)]);
-
-  // Add URL from input
-  const addUrl = () => {
-    const trimmed = newUrl.trim();
-    if (!trimmed) return;
-    if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) return;
-    if (imageUrls.includes(trimmed)) return;
-
-    setImageUrls((prev) => [...prev, trimmed]);
-    setNewUrl('');
-    setIsDirty(true);
-    setSaveError(null);
-    setSaveSuccess(false);
-    if (urlInputRef.current) urlInputRef.current.focus();
-  };
 
   // Remove image by index
   const removeUrl = (index) => {
@@ -126,13 +108,6 @@ const ImageUploader = ({ images = [], onSave, onChange, saving = false, label = 
       // Keep isDirty = true so user can retry
     } finally {
       setIsSaving(false);
-    }
-  };
-
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      addUrl();
     }
   };
 
@@ -393,36 +368,6 @@ const ImageUploader = ({ images = [], onSave, onChange, saving = false, label = 
         </div>
       )}
 
-      {/* OR divider */}
-      <div className="flex items-center gap-3">
-        <div className="flex-1 h-px bg-gray-200" />
-        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">or paste URL</span>
-        <div className="flex-1 h-px bg-gray-200" />
-      </div>
-
-      {/* Add URL input */}
-      <div className="flex gap-2">
-        <div className="relative flex-1">
-          <Link className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
-          <input
-            ref={urlInputRef}
-            type="url"
-            value={newUrl}
-            onChange={(e) => setNewUrl(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Paste image URL (https://...)"
-            className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500/30 focus:border-orange-400 outline-none transition-all placeholder:text-gray-400"
-          />
-        </div>
-        <button
-          onClick={addUrl}
-          disabled={!newUrl.trim()}
-          className="px-3 py-2 bg-gray-100 hover:bg-orange-50 text-gray-600 hover:text-orange-600 rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed border border-gray-200"
-          title="Add URL"
-        >
-          <Plus className="w-4 h-4" />
-        </button>
-      </div>
 
       {/* Lightbox preview */}
       {previewImage && (

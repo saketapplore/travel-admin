@@ -128,7 +128,7 @@ const OccupancySummary = () => {
           icon={Users}
           label="In-House Guests"
           value={data.inHouseGuests}
-          hint="Guests who checked in before today and aren't leaving today"
+          hint="Total guests currently staying across all occupied properties"
           accent={{ bg: 'bg-emerald-50', text: 'text-emerald-600' }}
           loading={loading && !asOf}
         />
@@ -143,13 +143,12 @@ const OccupancySummary = () => {
         <div className="text-xs text-gray-500 space-y-1">
           <p>
             <span className="font-semibold text-gray-600">Occupied Properties</span> — unique
-            properties where check-in is before now and check-out is after now (includes today's
-            arrivals).
+            properties currently occupied: check-in date is on or before today and check-out date
+            is after today (includes today's arrivals; excludes guests leaving today).
           </p>
           <p>
-            <span className="font-semibold text-gray-600">In-House Guests</span> — guests who
-            checked in yesterday or earlier and are not checking out today (today's check-ins and
-            check-outs are excluded).
+            <span className="font-semibold text-gray-600">In-House Guests</span> — total guests
+            across those occupied properties (everyone currently staying).
           </p>
         </div>
       </div>

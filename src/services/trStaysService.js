@@ -65,7 +65,8 @@ export const trStaysService = {
       return { data: { urls: validUrls } };
     } catch (err) {
       console.error('Batch upload error:', err);
-      throw err;
+      const backendMessage = err.response?.data?.message;
+      throw new Error(backendMessage || err.message || 'Upload failed.');
     }
   },
   

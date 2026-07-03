@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { userService } from '@/services/userService';
+import { useAuth } from '@/context/AuthContext';
+import { modulesForRole, ROLE_MODULE_ACCESS } from '@/constants/adminRoleAccess';
+import RolePermissionBadges from './RolePermissionBadges';
+
+// Only the 4 standard admin roles are selectable, regardless of any extra/seed
+// roles the backend returns (Point 3).
+const ALLOWED_ROLE_NAMES = Object.keys(ROLE_MODULE_ACCESS);
 
 const AVAILABLE_MODULES = [
   { id: 'dashboard', label: 'Dashboard' },
@@ -23,7 +30,8 @@ const EditUserModal = ({
   activeRoles,
   activeRolesLoading,
 }) => {
-  const [form, setForm] = useState({ 
+  const { user: currentUser } = useAuth();
+  const [form, setForm] = useState({
     name: '', 
     role: '', 
     password: '', 
@@ -52,6 +60,26 @@ const EditUserModal = ({
 
   if (!isOpen || !user) return null;
 
+  // Only a Super Admin can assign the Super Admin role; everyone else can
+  // manage admin users but cannot escalate to Super Admin.
+  const currentRoleName =
+    currentUser?.role?.name ||
+    (typeof currentUser?.role === 'string' ? currentUser.role : '');
+  const isSuperAdmin = currentRoleName === 'Super Admin';
+
+  // Restrict the dropdown to the 4 standard admin roles only (and hide
+  // Super Admin from non-Super-Admins).
+  const selectableRoles = (activeRoles || []).filter(
+    (r) =>
+      ALLOWED_ROLE_NAMES.includes(r.name) &&
+      (isSuperAdmin || r.name !== 'Super Admin')
+  );
+
+  // The currently selected role (for showing its access level).
+  const selectedRole = selectableRoles.find(
+    (r) => (r._id || r.id) === form.role
+  );
+
   const handleModuleToggle = (moduleId) => {
     setForm(prev => ({
       ...prev,
@@ -59,6 +87,17 @@ const EditUserModal = ({
         ...prev.modules,
         [moduleId]: !prev.modules[moduleId]
       }
+    }));
+  };
+
+  // Switching the role re-applies that role's default module access.
+  const handleRoleChange = (roleId) => {
+    const role = activeRoles?.find((r) => (r._id || r.id) === roleId);
+    const moduleIds = AVAILABLE_MODULES.map((m) => m.id);
+    setForm((prev) => ({
+      ...prev,
+      role: roleId,
+      modules: role ? modulesForRole(role, moduleIds) : prev.modules
     }));
   };
 
@@ -147,12 +186,12 @@ const EditUserModal = ({
               ) : (
                 <select
                   value={form.role}
-                  onChange={(e) => setForm({ ...form, role: e.target.value })}
+                  onChange={(e) => handleRoleChange(e.target.value)}
                   className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 transition-all outline-none font-bold text-gray-700 appearance-none cursor-pointer"
                   required
                 >
                   <option value="">Select a role</option>
-                  {activeRoles.map((r) => (
+                  {selectableRoles.map((r) => (
                     <option key={r._id || r.id} value={r._id || r.id}>
                       {r.name}
                     </option>
@@ -184,6 +223,8 @@ const EditUserModal = ({
                   </button>
                 </div>
               </div>
+
+              {selectedRole && <RolePermissionBadges role={selectedRole} />}
 
               <div className="grid grid-cols-2 gap-3">
                 {AVAILABLE_MODULES.map((module) => (
@@ -248,18 +289,18 @@ const EditUserModal = ({
           </div>
         </form>
 
-        <div className="flex gap-4 mt-8 flex-shrink-0">
+        <div className="flex gap-3 mt-6 flex-shrink-0">
           <button
             onClick={handleSubmit}
             disabled={loading}
-            className="flex-[2] bg-orange-500 hover:bg-orange-600 text-white py-5 rounded-2xl font-black transition-all shadow-lg shadow-orange-500/20 active:scale-95 disabled:opacity-50 text-lg tracking-tight"
+            className="flex-[2] bg-orange-500 hover:bg-orange-600 text-white py-3.5 rounded-xl font-black transition-all shadow-lg shadow-orange-500/20 active:scale-95 disabled:opacity-50 text-base tracking-tight"
           >
             {loading ? 'Updating...' : 'Update Admin User'}
           </button>
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-500 py-5 rounded-2xl font-black transition-all active:scale-95 text-lg tracking-tight"
+            className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-500 py-3.5 rounded-xl font-black transition-all active:scale-95 text-base tracking-tight"
           >
             Cancel
           </button>

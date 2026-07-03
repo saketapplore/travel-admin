@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { X, Building2, MapPin, Clock, Image, CheckCircle2, ChevronRight, Loader2 } from 'lucide-react';
-import ImageUploader from './ImageUploader';
+import { X, Building2, CheckCircle2, ChevronRight, Loader2 } from 'lucide-react';
+import CategoryPhotoManager from './CategoryPhotoManager';
 import LocationPicker from './LocationPicker';
+import { flattenCategoryImages } from '@/constants/photoCategories';
 
 const STEPS = [
   { id: 1, title: 'Basic Info' },
@@ -37,7 +38,7 @@ const CreatePropertyModal = ({ isOpen, onClose, onCreate }) => {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [images, setImages] = useState([]);
+  const [photoCats, setPhotoCats] = useState([]);
   const [formData, setFormData] = useState(EMPTY_FORM);
 
   const handleChange = (field, value) => {
@@ -70,11 +71,17 @@ const CreatePropertyModal = ({ isOpen, onClose, onCreate }) => {
     setLoading(true);
     setError('');
     try {
+      // Drop empty categories (no photos and no description); send category-wise
+      // photos. The backend flattens these into the `images` gallery too.
+      const cleanedCategories = (photoCats || []).filter(
+        (c) => (c.images?.length || 0) > 0 || (c.description || '').trim()
+      );
       await onCreate({
         ...formData,
         latitude: parseFloat(formData.latitude) || 0,
         longitude: parseFloat(formData.longitude) || 0,
-        images,
+        photoCategories: cleanedCategories,
+        images: flattenCategoryImages(cleanedCategories),
       });
       handleClose();
     } catch (err) {
@@ -87,7 +94,7 @@ const CreatePropertyModal = ({ isOpen, onClose, onCreate }) => {
   const handleClose = () => {
     setStep(1);
     setError('');
-    setImages([]);
+    setPhotoCats([]);
     setFormData(EMPTY_FORM);
     onClose();
   };
@@ -236,17 +243,16 @@ const CreatePropertyModal = ({ isOpen, onClose, onCreate }) => {
             </div>
           )}
 
-          {/* Step 4 — Images */}
+          {/* Step 4 — Images (category-wise, Point 8) */}
           {step === 4 && (
             <div className="p-4 bg-gray-50/80 border border-gray-100 rounded-2xl">
               <p className="text-xs text-gray-500 mb-3">
-                Upload or paste image URLs. They'll be saved automatically when you create the property.
+                Add photos by category using the predefined tags (Living Room, Bedroom 1, …)
+                or your own. You can upload multiple images per category and add a description.
               </p>
-              <ImageUploader
-                images={images}
-                onChange={(imgs) => setImages(imgs)}
-                saving={false}
-                label="Property Photos"
+              <CategoryPhotoManager
+                value={photoCats}
+                onChange={(next) => setPhotoCats(next)}
               />
             </div>
           )}
@@ -266,7 +272,7 @@ const CreatePropertyModal = ({ isOpen, onClose, onCreate }) => {
                   <ReviewRow label="Check-in" value={`${formData.checkInStart} – ${formData.checkInEnd}`} />
                   <ReviewRow label="Check-out" value={`By ${formData.checkOutEnd}`} />
                   <ReviewRow label="Cancellation" value={formData.allowGuestCancellation === 'yes' ? 'Allowed' : 'Not Allowed'} />
-                  <ReviewRow label="Images" value={`${images.length} photo(s)`} />
+                  <ReviewRow label="Images" value={`${flattenCategoryImages(photoCats).length} photo(s) in ${photoCats.filter((c) => (c.images?.length || 0) > 0).length} categor${photoCats.filter((c) => (c.images?.length || 0) > 0).length === 1 ? 'y' : 'ies'}`} />
                 </div>
               </div>
               <p className="text-xs text-gray-400 text-center">You can add room types after the property is created.</p>
