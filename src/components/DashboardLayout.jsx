@@ -5,6 +5,7 @@ import { userService } from '../services/userService';
 import { UserCircle, LogOut, BedDouble, Plane } from 'lucide-react';
 import logo from '../assets/logo.png';
 import NotificationBell from './NotificationBell';
+import NotificationToastContainer from './NotificationToast';
 import { useAdminNotifications } from '../hooks/useAdminNotifications';
 
 const DashboardLayout = ({ children }) => {
@@ -16,7 +17,7 @@ const DashboardLayout = ({ children }) => {
   const [updating, setUpdating] = useState(false);
   const [error, setError] = useState('');
   const dropdownRef = useRef(null);
-  const { bells, markRead } = useAdminNotifications();
+  const { bells, toasts, dismissToast, markRead } = useAdminNotifications();
 
   const isSuperAdminOrAdmin = () => {
     let roleKey = user?.roleKey;
@@ -259,6 +260,9 @@ const DashboardLayout = ({ children }) => {
           </div>
         </div>
       )}
+
+      {/* Global floating notification toasts */}
+      <NotificationToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
   );
 };

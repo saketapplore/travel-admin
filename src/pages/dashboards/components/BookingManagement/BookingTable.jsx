@@ -10,8 +10,6 @@ const BookingTable = ({
   pagination,
   onPageChange,
   onViewBooking,
-  onGenerateInvoice,
-  onViewDocuments,
   onSearch
 }) => {
   const [searchInput, setSearchInput] = useState(filters.search || '');
@@ -33,178 +31,115 @@ const BookingTable = ({
     if (onSearch) onSearch('');
   };
 
+  const typeConfig = {
+    HOTEL:           { label: 'Hotel',         cls: 'bg-amber-100 text-amber-800' },
+    FLIGHT:          { label: 'Flight',         cls: 'bg-blue-100 text-blue-800' },
+    DOMESTIC_RETURN: { label: 'Return Flight',  cls: 'bg-purple-100 text-purple-800' },
+    PROPERTY:        { label: 'Stay',           cls: 'bg-green-100 text-green-800' },
+  };
+
   const columns = [
     {
-      key: 'bookingType',
-      header: 'Booking Type',
+      key: 'type',
+      header: 'Type',
       accessor: 'bookingType',
-      render: (value, row) => {
-        if (value === 'DOMESTIC_RETURN') {
-          const route = row.flightDetails?.Origin && row.flightDetails?.Destination
-            ? ` (${row.flightDetails.Origin} ↔ ${row.flightDetails.Destination})`
-            : '';
-          return (
-            <span className="inline-flex items-center gap-1">
-              <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">
-                Return Flight
-              </span>
-              {route && <span className="text-xs text-gray-500">{route}</span>}
-            </span>
-          );
-        }
-        if (value === 'FLIGHT') {
-          return (
-            <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-              Flight
-            </span>
-          );
-        }
-        if (value === 'HOTEL') {
-          return (
-            <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-amber-100 text-amber-800">
-              Hotel
-            </span>
-          );
-        }
-        return value || 'N/A';
+      render: (value) => {
+        const cfg = typeConfig[value] || { label: value || 'N/A', cls: 'bg-gray-100 text-gray-700' };
+        return <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${cfg.cls}`}>{cfg.label}</span>;
       },
-      cellClassName: 'text-sm text-gray-700 font-medium'
+    },
+    {
+      key: 'guest',
+      header: 'Guest',
+      accessor: '_id',
+      render: (_, row) => {
+        const name = row.userName || row.user?.name ||
+          (row.leadPassenger?.firstName
+            ? `${row.leadPassenger.firstName} ${row.leadPassenger.lastName || ''}`.trim()
+            : null) ||
+          row.guestName || 'N/A';
+        const email = row.userEmail || row.user?.email || row.guestEmail || '';
+        return (
+          <div className="min-w-[130px]">
+            <p className="text-sm font-medium text-gray-900 truncate">{name}</p>
+            {email && <p className="text-xs text-gray-400 truncate">{email}</p>}
+          </div>
+        );
+      },
+    },
+    {
+      key: 'property',
+      header: 'Property / Route',
+      accessor: '_id',
+      render: (_, row) => {
+        const name =
+          row.propertyName ||
+          row.hotelDetails?.HotelName ||
+          (row.flightDetails?.Origin && row.flightDetails?.Destination
+            ? `${row.flightDetails.Origin} → ${row.flightDetails.Destination}`
+            : null);
+        return <span className="text-sm text-gray-700 min-w-[140px] block truncate">{name || 'N/A'}</span>;
+      },
+    },
+    {
+      key: 'bookingId',
+      header: 'Booking ID',
+      accessor: 'bookingId',
+      render: (value) => <span className="font-mono text-xs text-gray-600">{value || '—'}</span>,
+    },
+    {
+      key: 'amount',
+      header: 'Amount',
+      accessor: 'totalAmount',
+      render: (value, row) => (
+        <span className="text-sm font-semibold text-gray-800">
+          ₹{Number(value || 0).toLocaleString('en-IN')}
+        </span>
+      ),
     },
     {
       key: 'status',
       header: 'Status',
       accessor: 'status',
       render: (value) => (
-        <span
-          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getBookingStatusColor(value)}`}
-        >
+        <span className={`px-2 py-0.5 inline-flex text-xs font-semibold rounded-full ${getBookingStatusColor(value)}`}>
           {formatStatus(value)}
         </span>
       ),
-      cellClassName: 'text-sm'
-    },
-    {
-      key: 'username',
-      header: 'Username',
-      accessor: 'username',
-      render: (value) => value || 'N/A',
-      cellClassName: 'text-sm font-medium text-gray-900'
-    },
-    {
-      key: 'userEmail',
-      header: 'User Email',
-      accessor: 'userEmail',
-      render: (value) => value || 'N/A',
-      cellClassName: 'text-sm text-gray-500'
-    },
-    {
-      key: 'country',
-      header: 'Country',
-      accessor: 'country',
-      render: (value) => value || 'N/A',
-      cellClassName: 'text-sm text-gray-500'
-    },
-    {
-      key: 'totalAmount',
-      header: 'Total Amount',
-      accessor: 'totalAmount',
-      render: (value) => value || 0,
-      cellClassName: 'text-sm text-gray-700 font-medium'
-    },
-    {
-      key: 'currency',
-      header: 'Currency',
-      accessor: 'currency',
-      render: (value) => value || 'N/A',
-      cellClassName: 'text-sm text-gray-500'
-    },
-    {
-      key: '_id',
-      header: 'MongoDB ID',
-      accessor: '_id',
-      render: (value) => <span className="font-mono text-xs">{value || 'N/A'}</span>,
-      cellClassName: 'text-sm text-gray-700'
-    },
-    {
-      key: 'bookingId',
-      header: 'Booking ID',
-      accessor: 'bookingId',
-      render: (value) => <span className="font-mono text-xs">{value || 'N/A'}</span>,
-      cellClassName: 'text-sm text-gray-700'
-    },
-    {
-      key: 'transactionId',
-      header: 'Transaction ID',
-      accessor: 'transactionId',
-      render: (value) => <span className="font-mono text-xs">{value || 'N/A'}</span>,
-      cellClassName: 'text-sm text-gray-700'
     },
     {
       key: 'paymentStatus',
-      header: 'Payment Status',
+      header: 'Payment',
       accessor: 'paymentStatus',
       render: (value) => (
-        <span
-          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getPaymentStatusColor(value)}`}
-        >
+        <span className={`px-2 py-0.5 inline-flex text-xs font-semibold rounded-full ${getPaymentStatusColor(value)}`}>
           {formatStatus(value)}
         </span>
       ),
-      cellClassName: 'text-sm'
     },
     {
-      key: 'traceId',
-      header: 'Trace ID',
-      accessor: 'traceId',
-      render: (value) => <span className="font-mono text-xs">{value || 'N/A'}</span>,
-      cellClassName: 'text-sm text-gray-700'
+      key: 'date',
+      header: 'Date',
+      accessor: 'createdAt',
+      render: (value) => (
+        <span className="text-xs text-gray-500 whitespace-nowrap">
+          {value ? new Date(value).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
+        </span>
+      ),
     },
     {
       key: 'actions',
-      header: 'Actions',
+      header: '',
       accessor: (row) => row,
-      cellClassName: 'text-sm font-medium space-x-2',
       render: (_, row) => (
-        <div className="flex items-center space-x-2">
-          {/* View Documents Button */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onViewDocuments(row);
-            }}
-            className="p-2 text-blue-600 hover:text-blue-900 hover:bg-blue-50 rounded-lg transition-colors"
-            title="View User Documents"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-            </svg>
-          </button>
-
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              if (row.invoiceUrl) {
-                window.open(row.invoiceUrl, '_blank', 'noopener,noreferrer');
-              } else {
-                onGenerateInvoice(row);
-              }
-            }}
-            className="p-2 text-orange-600 hover:text-orange-900 hover:bg-orange-50 rounded-lg transition-colors"
-            title={row.invoiceUrl ? "View Invoice" : "Generate & Download Invoice"}
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.5}
-                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-              />
-            </svg>
-          </button>
-        </div>
-      )
-    }
+        <button
+          onClick={(e) => { e.stopPropagation(); onViewBooking(row); }}
+          className="px-3 py-1.5 text-xs font-semibold text-orange-600 border border-orange-200 rounded-lg hover:bg-orange-50 transition-colors whitespace-nowrap"
+        >
+          View Details
+        </button>
+      ),
+    },
   ];
 
   return (

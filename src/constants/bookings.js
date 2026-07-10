@@ -10,8 +10,7 @@ export const BookingStatus = {
   CONFIRMED: 'confirmed',
   CANCELLED: 'cancelled',
   FAILED: 'failed',
-  HOLD_FLIGHT: 'hold_flight',
-  HOLD_FAILED: 'hold_failed'
+  HOLD: 'hold',
 };
 
 export const BookingType = {

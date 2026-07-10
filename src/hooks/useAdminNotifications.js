@@ -4,7 +4,10 @@ import { connectSocket, disconnectSocket } from '../services/socket';
 
 const EMPTY = { items: [], unreadCount: 0 };
 const MAX_ITEMS = 30;
+const MAX_TOASTS = 5;
 const SOCKET_EVENT = 'admin:notification';
+
+let toastCounter = 0;
 
 /**
  * Drives the two top-bar notification bells:
@@ -15,6 +18,7 @@ const SOCKET_EVENT = 'admin:notification';
  */
 export const useAdminNotifications = () => {
   const [bells, setBells] = useState({ stays: { ...EMPTY }, travel: { ...EMPTY } });
+  const [toasts, setToasts] = useState([]);
   const [connected, setConnected] = useState(false);
   const mounted = useRef(true);
 
@@ -44,6 +48,7 @@ export const useAdminNotifications = () => {
       const onDisconnect = () => mounted.current && setConnected(false);
       const onNotification = (n) => {
         if (!mounted.current || !n?.source) return;
+        // Update bell
         setBells((prev) => {
           const bell = prev[n.source] || { ...EMPTY };
           return {
@@ -53,6 +58,11 @@ export const useAdminNotifications = () => {
               unreadCount: bell.unreadCount + 1
             }
           };
+        });
+        // Show toast
+        setToasts((prev) => {
+          const id = ++toastCounter;
+          return [{ ...n, id }, ...prev].slice(0, MAX_TOASTS);
         });
       };
 
@@ -88,7 +98,11 @@ export const useAdminNotifications = () => {
     }
   }, []);
 
-  return { bells, connected, markRead, refresh: fetchAll };
+  const dismissToast = useCallback((id) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
+  return { bells, toasts, dismissToast, connected, markRead, refresh: fetchAll };
 };
 
 export default useAdminNotifications;

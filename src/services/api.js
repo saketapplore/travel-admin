@@ -137,19 +137,10 @@ api.interceptors.response.use(
       // Handle specific status codes
       switch (status) {
         case 401: {
-          // Unauthorized - only logout for critical endpoints (login, logout)
-          // For other endpoints, let the component handle the error
-          const url = error.config?.url || '';
-          const isCriticalEndpoint =
-            url.includes('/login') || url.includes('/logout') || url.includes('/auth');
-
-          if (isCriticalEndpoint) {
-            localStorage.removeItem('adminUser');
-            if (window.location.pathname !== '/login') {
-              window.location.href = '/login';
-            }
+          localStorage.removeItem('adminUser');
+          if (window.location.pathname !== '/login') {
+            window.location.href = '/login';
           }
-
           return Promise.reject({
             message: 'Session expired. Please login again.',
             status

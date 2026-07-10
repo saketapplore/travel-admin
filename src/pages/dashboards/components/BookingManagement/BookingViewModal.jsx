@@ -1,6 +1,44 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { bookingService } from '../../../../services/bookingService';
 
 const BookingViewModal = ({ isOpen, onClose, booking, loading, error }) => {
+  const [voucherLoading, setVoucherLoading] = useState(false);
+  const [voucherResult, setVoucherResult] = useState(null);
+  const [voucherError, setVoucherError] = useState('');
+  const [syncLoading, setSyncLoading] = useState(false);
+  const [syncResult, setSyncResult] = useState(null);
+  const [syncError, setSyncError] = useState('');
+
+  const handleSyncFromTBO = async () => {
+    if (!booking?._id) return;
+    setSyncLoading(true);
+    setSyncError('');
+    setSyncResult(null);
+    try {
+      const res = await bookingService.syncFromTBO(booking._id);
+      setSyncResult(res.data);
+    } catch (err) {
+      setSyncError(err?.response?.data?.message || err?.message || 'Sync failed.');
+    } finally {
+      setSyncLoading(false);
+    }
+  };
+
+  const handleGenerateVoucher = async () => {
+    if (!booking?._id) return;
+    setVoucherLoading(true);
+    setVoucherError('');
+    setVoucherResult(null);
+    try {
+      const res = await bookingService.generateVoucher(booking._id);
+      setVoucherResult(res.data?.data || res.data);
+    } catch (err) {
+      setVoucherError(err?.response?.data?.message || err?.message || 'Voucher generation failed.');
+    } finally {
+      setVoucherLoading(false);
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -68,11 +106,16 @@ const BookingViewModal = ({ isOpen, onClose, booking, loading, error }) => {
                   </h4>
                   <div className="space-y-1">
                     <p className="text-lg font-bold text-gray-900">
-                      {booking.guestName || 'Valued Guest'}
+                      {booking.user?.name ||
+                        booking.passengers?.[0] && `${booking.passengers[0].FirstName || ''} ${booking.passengers[0].LastName || ''}`.trim() ||
+                        booking.guestName ||
+                        'N/A'}
                     </p>
-                    <p className="text-gray-600 text-sm">{booking.guestEmail}</p>
                     <p className="text-gray-600 text-sm">
-                      {booking.guestPhone || 'No phone provided'}
+                      {booking.user?.email || booking.guestEmail || ''}
+                    </p>
+                    <p className="text-gray-600 text-sm">
+                      {booking.user?.phone || booking.user?.mobileNumber || booking.guestPhone || ''}
                     </p>
                   </div>
                 </div>
@@ -110,53 +153,38 @@ const BookingViewModal = ({ isOpen, onClose, booking, loading, error }) => {
                   Travel Information
                 </h4>
                 <div className="grid grid-cols-3 gap-8">
-                  {booking.bookingDetails?.flightDetails ? (
+                  {(booking.bookingType === 'FLIGHT' || booking.bookingType === 'DOMESTIC_RETURN' || booking.flightDetails) ? (
                     <>
                       <div>
                         <p className="text-xs text-gray-400 mb-1">Airline</p>
                         <p className="font-bold text-gray-900">
-                          {booking.bookingDetails.flightDetails.AirlineName}
+                          {booking.flightDetails?.AirlineName || booking.bookingDetails?.flightDetails?.AirlineName || '—'}
                         </p>
                         <p className="text-xs text-gray-500">
-                          {booking.bookingDetails.flightDetails.FlightNumber}
+                          {booking.flightDetails?.FlightNumber || booking.bookingDetails?.flightDetails?.FlightNumber || ''}
                         </p>
                       </div>
                       <div>
                         <p className="text-xs text-gray-400 mb-1">Route</p>
                         <div className="flex items-center gap-2">
                           <span className="font-bold text-gray-900">
-                            {booking.bookingDetails.flightDetails.Origin}
+                            {booking.flightDetails?.Origin || booking.bookingDetails?.flightDetails?.Origin || '—'}
                           </span>
-                          <svg
-                            className="w-4 h-4 text-orange-500"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M17 8l4 4m0 0l-4 4m4-4H3"
-                            />
+                          <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                           </svg>
                           <span className="font-bold text-gray-900">
-                            {booking.bookingDetails.flightDetails.Destination}
+                            {booking.flightDetails?.Destination || booking.bookingDetails?.flightDetails?.Destination || '—'}
                           </span>
                         </div>
                       </div>
                       <div>
                         <p className="text-xs text-gray-400 mb-1">Departure</p>
                         <p className="font-bold text-gray-900">
-                          {booking.bookingDetails.flightDetails.DepartureTime
-                            ? new Date(
-                                booking.bookingDetails.flightDetails.DepartureTime
-                              ).toLocaleDateString(undefined, {
-                                month: 'short',
-                                day: 'numeric',
-                                year: 'numeric'
-                              })
-                            : 'N/A'}
+                          {(booking.flightDetails?.DepartureTime || booking.bookingDetails?.flightDetails?.DepartureTime)
+                            ? new Date(booking.flightDetails?.DepartureTime || booking.bookingDetails?.flightDetails?.DepartureTime)
+                                .toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+                            : '—'}
                         </p>
                       </div>
                     </>
@@ -165,13 +193,20 @@ const BookingViewModal = ({ isOpen, onClose, booking, loading, error }) => {
                       <div className="col-span-2">
                         <p className="text-xs text-gray-400 mb-1">Property</p>
                         <p className="font-bold text-gray-900 text-lg leading-tight">
-                          {booking.propertyName || 'N/A'}
+                          {booking.hotelDetails?.HotelName || booking.propertyName || '—'}
                         </p>
+                        {booking.hotelDetails?.ConfirmationNo && (
+                          <p className="text-xs text-gray-400 mt-1">
+                            Conf# <span className="font-mono text-gray-600">{booking.hotelDetails.ConfirmationNo}</span>
+                          </p>
+                        )}
                       </div>
                       <div className="text-right">
                         <p className="text-xs text-gray-400 mb-1">Stay Duration</p>
                         <p className="font-bold text-gray-900">
-                          {booking.checkIn} — {booking.checkOut}
+                          {booking.hotelDetails?.checkIn || booking.checkIn || '—'}
+                          {' — '}
+                          {booking.hotelDetails?.checkOut || booking.checkOut || '—'}
                         </p>
                       </div>
                     </>
@@ -205,7 +240,7 @@ const BookingViewModal = ({ isOpen, onClose, booking, loading, error }) => {
                         </span>
                       </td>
                       <td className="py-5 text-right font-bold text-gray-900 pr-2">
-                        {booking.totalAmount || 0} {booking.currency || 'INR'}
+                        ₹{Number(booking.totalAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
                     </tr>
                   </tbody>
@@ -217,7 +252,7 @@ const BookingViewModal = ({ isOpen, onClose, booking, loading, error }) => {
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">Subtotal</span>
                     <span className="font-semibold text-gray-900">
-                      {booking.totalAmount || 0}.00 {booking.currency || 'INR'}
+                      ₹{Number(booking.totalAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
                   </div>
                   <div className="flex justify-between items-center pt-4 border-t border-gray-100">
@@ -225,11 +260,94 @@ const BookingViewModal = ({ isOpen, onClose, booking, loading, error }) => {
                       Grand Total
                     </span>
                     <span className="text-3xl font-black text-orange-600">
-                      {booking.totalAmount || 0}.00 {booking.currency || 'INR'}
+                      ₹{Number(booking.totalAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
                   </div>
                 </div>
               </div>
+
+              {booking.bookingType === 'HOTEL' && (
+                <div className="border border-gray-200 rounded-2xl p-6 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                      Voucher Status
+                    </h4>
+                    <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${
+                      booking.voucherStatus
+                        ? 'bg-green-100 text-green-700'
+                        : booking.autoVoucherTriggered
+                        ? 'bg-red-100 text-red-700'
+                        : 'bg-yellow-100 text-yellow-700'
+                    }`}>
+                      {booking.voucherStatus ? '✓ Generated' : booking.autoVoucherTriggered ? 'Quarantined' : 'Pending'}
+                    </span>
+                  </div>
+
+                  {typeof booking.voucherAttempts === 'number' && booking.voucherAttempts > 0 && (
+                    <p className="text-sm text-gray-500">
+                      Attempts: <span className="font-semibold text-gray-900">{booking.voucherAttempts}</span>
+                    </p>
+                  )}
+
+                  {booking.voucherFailureReason && (
+                    <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">
+                      Last error: {booking.voucherFailureReason}
+                    </p>
+                  )}
+
+                  {voucherResult && (
+                    <div className="text-sm text-green-700 bg-green-50 rounded-lg px-3 py-2 space-y-1">
+                      <p className="font-bold">Voucher Generated Successfully!</p>
+                      {voucherResult.InvoiceNumber && <p>Invoice No: {voucherResult.InvoiceNumber}</p>}
+                      {voucherResult.ConfirmationNo && <p>Confirmation No: {voucherResult.ConfirmationNo}</p>}
+                    </div>
+                  )}
+
+                  {voucherError && (
+                    <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{voucherError}</p>
+                  )}
+
+                  {!booking.voucherStatus && !voucherResult && (
+                    <button
+                      onClick={handleGenerateVoucher}
+                      disabled={voucherLoading}
+                      className="w-full mt-2 bg-orange-500 hover:bg-orange-600 disabled:opacity-60 text-white px-4 py-2.5 rounded-xl font-bold text-sm transition-all duration-200 active:scale-95"
+                    >
+                      {voucherLoading ? 'Generating...' : 'Generate Voucher'}
+                    </button>
+                  )}
+
+                  <div className="border-t border-gray-100 pt-4 mt-2">
+                    <p className="text-xs text-gray-400 mb-2 uppercase tracking-widest font-bold">Debug</p>
+                    {syncResult && (
+                      <div className={`text-sm rounded-lg px-3 py-2 mb-2 space-y-1 ${syncResult.success ? 'bg-green-50 text-green-700' : 'bg-yellow-50 text-yellow-700'}`}>
+                        <p className="font-bold">{syncResult.message}</p>
+                        {syncResult.updatedFields?.length > 0 && (
+                          <p className="text-xs">Updated: {syncResult.updatedFields.join(', ')}</p>
+                        )}
+                        {syncResult.raw && (
+                          <details className="text-xs mt-1">
+                            <summary className="cursor-pointer font-semibold">Raw TBO Response</summary>
+                            <pre className="mt-1 whitespace-pre-wrap break-all text-[10px] bg-white rounded p-2 border border-gray-200 max-h-40 overflow-y-auto">
+                              {JSON.stringify(syncResult.raw, null, 2)}
+                            </pre>
+                          </details>
+                        )}
+                      </div>
+                    )}
+                    {syncError && (
+                      <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2 mb-2">{syncError}</p>
+                    )}
+                    <button
+                      onClick={handleSyncFromTBO}
+                      disabled={syncLoading}
+                      className="w-full bg-gray-800 hover:bg-gray-900 disabled:opacity-60 text-white px-4 py-2.5 rounded-xl font-bold text-sm transition-all duration-200 active:scale-95"
+                    >
+                      {syncLoading ? 'Syncing...' : 'Sync from TBO'}
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-12 mt-12 bg-gray-900 p-8 rounded-2xl text-gray-400 text-[10px] leading-relaxed">
                 <div>

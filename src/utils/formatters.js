@@ -33,10 +33,13 @@ export const getBookingStatusColor = (status) => {
       return 'bg-red-100 text-red-800';
     case 'failed':
       return 'bg-red-100 text-red-800';
+    case 'hold':
     case 'hold_flight':
-      return 'bg-orange-100 text-orange-800';
+    case 'hold_hotel':
     case 'hold_failed':
-      return 'bg-red-100 text-red-800';
+    case 'hold_released':
+    case 'partial_hold':
+      return 'bg-amber-100 text-amber-800';
     default:
       return 'bg-gray-100 text-gray-800';
   }

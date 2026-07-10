@@ -20,6 +20,28 @@ export const useBookings = () => {
   const [documentLoading, setDocumentLoading] = useState(false);
   const [documentError, setDocumentError] = useState('');
 
+  // Open booking modal from notification toast/bell
+  useEffect(() => {
+    const handler = async (e) => {
+      const bookingId = e.detail?.bookingId;
+      if (!bookingId) return;
+      setViewModalOpen(true);
+      setViewLoading(true);
+      setViewError('');
+      setSelectedBooking(null);
+      try {
+        const response = await bookingService.getById(bookingId);
+        setSelectedBooking(response?.data?.data || response?.data || response);
+      } catch (err) {
+        setViewError(err?.response?.data?.message || err?.message || 'Failed to fetch booking');
+      } finally {
+        setViewLoading(false);
+      }
+    };
+    window.addEventListener('open-booking-modal', handler);
+    return () => window.removeEventListener('open-booking-modal', handler);
+  }, []);
+
   const [filters, setFilters] = useState(() => {
     const savedFilters = localStorage.getItem('bookingManagementFilters');
     if (savedFilters) {
@@ -108,10 +130,14 @@ export const useBookings = () => {
         guestEmail: booking.guestEmail || booking.guest?.email || booking.user?.email || '',
         guestPhone: booking.guestPhone || booking.guest?.phone || booking.user?.phone || '',
         propertyName:
-          booking.propertyName || booking.property?.name || booking.hotel?.name || 'N/A',
+          booking.hotelDetails?.HotelName ||
+          booking.propertyName ||
+          booking.property?.name ||
+          booking.hotel?.name ||
+          null,
         propertyId: booking.propertyId || booking.property?._id || booking.property?.id,
-        checkIn: booking.checkIn || booking.checkInDate || '',
-        checkOut: booking.checkOut || booking.checkOutDate || '',
+        checkIn: booking.checkIn || booking.checkInDate || booking.hotelDetails?.checkIn || '',
+        checkOut: booking.checkOut || booking.checkOutDate || booking.hotelDetails?.checkOut || '',
         guests: booking.guests || booking.numberOfGuests || 1,
         amount: booking.amount || booking.totalAmount || booking.price || 0,
         bookingStatus: booking.status || booking.bookingStatus || 'pending',
@@ -123,7 +149,12 @@ export const useBookings = () => {
         familyMembers: booking.familyMembers || booking.guests || [],
         userId: booking.user?._id || booking.user?.id || '',
         _source: booking._source || 'bookings',
+        hotelDetails: booking.hotelDetails || null,
         flightDetails: booking.flightDetails || null,
+        voucherStatus: booking.voucherStatus ?? null,
+        voucherAttempts: booking.voucherAttempts ?? 0,
+        voucherFailureReason: booking.voucherFailureReason || null,
+        autoVoucherTriggered: booking.autoVoucherTriggered ?? false,
         OB_status: booking.OB_status || null,
         IB_status: booking.IB_status || null
       }));

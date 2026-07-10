@@ -20,7 +20,9 @@ export const bookingService = {
   getBookingDocuments: (bookingId) => api.get(`/bookings/${bookingId}/documents`),
   create: (data) => api.post('/bookings', data),
   update: (id, data) => api.put(`/bookings/${id}`, data),
-  delete: (id) => api.delete(`/bookings/${id}`)
+  delete: (id) => api.delete(`/bookings/${id}`),
+  generateVoucher: (id) => api.post(`/bookings/${id}/generate-voucher`),
+  syncFromTBO: (id) => api.post(`/bookings/${id}/sync-from-tbo`)
 };
 
 export default bookingService;

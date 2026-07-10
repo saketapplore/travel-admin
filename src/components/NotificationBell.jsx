@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { ExternalLink } from 'lucide-react';
 
-// Compact relative time, e.g. "just now", "5m", "3h", "2d".
 const timeAgo = (date) => {
   if (!date) return '';
   const diff = Date.now() - new Date(date).getTime();
@@ -12,6 +12,30 @@ const timeAgo = (date) => {
   const h = Math.floor(m / 60);
   if (h < 24) return `${h}h`;
   return `${Math.floor(h / 24)}d`;
+};
+
+const EVENT_DOT = {
+  voucher_failed: 'bg-amber-500',
+  voucher_quarantined: 'bg-red-600',
+  voucher_generated: 'bg-green-500',
+  new_booking: 'bg-blue-500',
+  cancellation: 'bg-red-500',
+};
+
+const ViewBookingAction = ({ bookingId }) => {
+  const handle = (e) => {
+    e.stopPropagation();
+    window.dispatchEvent(new CustomEvent('open-booking-modal', { detail: { bookingId: String(bookingId) } }));
+  };
+  return (
+    <button
+      onClick={handle}
+      className="mt-1.5 flex items-center gap-1 bg-orange-500 hover:bg-orange-600 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg transition-all active:scale-95"
+    >
+      <ExternalLink className="w-3 h-3" />
+      View Booking
+    </button>
+  );
 };
 
 /**
@@ -72,21 +96,21 @@ const NotificationBell = ({ icon: Icon, label, bell }) => {
               </div>
             ) : (
               items.map((n) => {
-                const isCancellation = n.event === 'cancellation';
+                const dotColor = EVENT_DOT[n.event] || 'bg-gray-400';
+                const canVoucher = !!n.relatedId;
                 return (
                   <div
                     key={n._id || `${n.createdAt}-${n.bookingRef}`}
                     className="px-4 py-3 border-b border-gray-50 hover:bg-gray-50 transition-colors flex gap-3"
                   >
-                    <span
-                      className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${
-                        isCancellation ? 'bg-red-500' : 'bg-green-500'
-                      }`}
-                    />
+                    <span className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${dotColor}`} />
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold text-gray-800 truncate">{n.title}</p>
-                      {n.body && <p className="text-xs text-gray-500 truncate">{n.body}</p>}
+                      <p className="text-sm font-semibold text-gray-800 leading-snug">{n.title}</p>
+                      {n.body && (
+                        <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{n.body}</p>
+                      )}
                       <p className="text-[10px] text-gray-400 mt-0.5">{timeAgo(n.createdAt)}</p>
+                      {canVoucher && <ViewBookingAction bookingId={String(n.relatedId)} />}
                     </div>
                   </div>
                 );

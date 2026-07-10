@@ -24,6 +24,8 @@ const PlatformFee = () => {
   const [selectedState, setSelectedState] = useState(null);
   const [selectedCityObj, setSelectedCityObj] = useState(null);
 
+  const [viewTab, setViewTab] = useState('all');
+
   const [feeInput, setFeeInput] = useState('');
   const [allFees, setAllFees] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -250,46 +252,82 @@ const PlatformFee = () => {
         </div>
 
         {/* Configured rates */}
-        <div className="bg-white rounded-3xl p-6 border border-gray-100">
-          <h4 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-4">Configured Rates</h4>
+        <div className="bg-white rounded-3xl p-6 border border-gray-100 flex flex-col">
+          <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
+            <h4 className="text-sm font-black text-gray-400 uppercase tracking-widest">Configured Rates</h4>
+            {/* View tabs */}
+            <div className="flex gap-1 bg-gray-100 rounded-xl p-1">
+              {[
+                { id: 'all', label: 'All', Icon: Layers },
+                { id: 'flight', label: 'Flights', Icon: Plane },
+                { id: 'hotel', label: 'Hotels', Icon: Building2 },
+              ].map(({ id, label, Icon }) => (
+                <button
+                  key={id}
+                  onClick={() => setViewTab(id)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    viewTab === id
+                      ? 'bg-white text-orange-500 shadow-sm'
+                      : 'text-gray-400 hover:text-gray-600'
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
           {isLoading ? (
             <p className="text-gray-400 text-sm py-8 text-center">Loading…</p>
-          ) : allFees.length === 0 ? (
-            <p className="text-gray-400 text-sm py-8 text-center">No rates configured yet.</p>
           ) : (
-            <div className="space-y-2 max-h-[460px] overflow-y-auto">
-              {allFees.map((f) => {
-                const Icon = moduleIcon(f.module);
-                const isDefault = f.isDefault || (!f.country && !f.city);
-                return (
-                  <div
-                    key={f._id}
-                    className="flex items-center gap-3 px-4 py-3 rounded-2xl border border-gray-100 hover:bg-gray-50"
-                  >
-                    <div className="p-2 rounded-xl bg-orange-50 text-orange-500">
-                      <Icon className="w-4 h-4" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="font-bold text-gray-800 capitalize text-sm">{f.module}</p>
-                      <p className="text-xs text-gray-400 truncate">{scopeLabel(f)}</p>
-                    </div>
-                    <span className="font-black text-gray-800">
-                      {f.amount}
-                      {f.feeType === 'percentage' ? '%' : ''}
-                    </span>
-                    {!isDefault && (
-                      <button
-                        onClick={() => setDeleteConfirm({ open: true, id: f._id })}
-                        className="p-1.5 text-gray-300 hover:text-red-600 hover:bg-red-50 rounded-lg"
-                        title="Remove override"
+            (() => {
+              const filtered = viewTab === 'all'
+                ? allFees
+                : allFees.filter((f) =>
+                    viewTab === 'flight'
+                      ? f.module === 'flight' || f.module === 'both'
+                      : f.module === 'hotel' || f.module === 'both'
+                  );
+              return filtered.length === 0 ? (
+                <p className="text-gray-400 text-sm py-8 text-center">
+                  No rates configured for {viewTab === 'all' ? 'any module' : viewTab === 'flight' ? 'flights' : 'hotels'}.
+                </p>
+              ) : (
+                <div className="space-y-2 max-h-[420px] overflow-y-auto">
+                  {filtered.map((f) => {
+                    const Icon = moduleIcon(f.module);
+                    const isDefault = f.isDefault || (!f.country && !f.city);
+                    return (
+                      <div
+                        key={f._id}
+                        className="flex items-center gap-3 px-4 py-3 rounded-2xl border border-gray-100 hover:bg-gray-50"
                       >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+                        <div className="p-2 rounded-xl bg-orange-50 text-orange-500">
+                          <Icon className="w-4 h-4" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-bold text-gray-800 capitalize text-sm">{f.module}</p>
+                          <p className="text-xs text-gray-400 truncate">{scopeLabel(f)}</p>
+                        </div>
+                        <span className="font-black text-gray-800">
+                          {f.amount}
+                          {f.feeType === 'percentage' ? '%' : ''}
+                        </span>
+                        {!isDefault && (
+                          <button
+                            onClick={() => setDeleteConfirm({ open: true, id: f._id })}
+                            className="p-1.5 text-gray-300 hover:text-red-600 hover:bg-red-50 rounded-lg"
+                            title="Remove override"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()
           )}
         </div>
       </div>
